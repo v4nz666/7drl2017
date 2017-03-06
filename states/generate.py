@@ -283,11 +283,12 @@ class GenerateState(GameState):
             return False
 
         grassNeighbours = self.getNeighboursOfType('grass', x, y)
-        for nx, ny in grassNeighbours:
-            c = grassNeighbours[nx, ny]
-            if c.entity:
-                print "Neighbouring tile has entity"
-                return False
+        if grassNeighbours:
+            for nx, ny in grassNeighbours:
+                c = grassNeighbours[nx, ny]
+                if c.entity:
+                    print "Neighbouring tile has entity"
+                    return False
 
         for nx, ny in waterNeighbours:
             if not self.checkPath(nx, ny, self.testPoint[0], self.testPoint[1]):

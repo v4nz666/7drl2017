@@ -16,7 +16,7 @@ RoguePy.setFps(60)
 game = Game("Pirates of Rogue Basin", config.layout['uiWidth'], config.layout['uiHeight'], False)
 game.addState(SplashState('splash'))
 game.addState(GenerateState('generate'))
-# game.addState(PlayState('play'))
+game.addState(PlayState('play'))
 # game.addState(WinState('win'))
 # game.addState(LoseState('lose'))
 

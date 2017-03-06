@@ -15,7 +15,7 @@ class Dial(Element):
 
         self.cacheFaces()
 
-        wh = len(self.faces[size])
+        wh = len(self.faces[size][0])
         super(Dial, self).__init__(x, y, wh, wh)
 
         self.size = size
