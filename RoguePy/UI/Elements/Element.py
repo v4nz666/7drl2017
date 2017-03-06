@@ -65,11 +65,14 @@ class Element(View):
   def toggleEnabled(self):
     self.enabled = not self.enabled
     self.setDirty()
+    return self
 
   def enable(self):
     self.enabled = True
     self.setDirty()
+    return self
 
   def disable(self):
     self.enabled = False
     self.setDirty()
+    return self

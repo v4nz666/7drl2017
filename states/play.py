@@ -67,6 +67,8 @@ class PlayState(GameState):
         self.view.addElement(self.mapElement)
         self.setFocus(self.mapElement)
 
+        self.logMap = self.logFrame.addElement(Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
+
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
         self.infoPanel.addElement(Elements.Label(1, 1, "Heading"))
@@ -164,9 +166,20 @@ class PlayState(GameState):
         modalH = halfY * 3 / 2
 
         self.logModal = View(modalW, modalH, modalX, modalY)
-        self.modalFrame = self.logModal.addElement(Elements.Frame(0, 0, modalW, modalH))
-        self.modalFrame.setTitle("Modal Elements")
-        self.modalLabel = self.logModal.addElement(Elements.Label(3, modalH - 1, "TAB - Back"))
+
+        logString = "CAPTAIN'S LOG"
+        strX = modalW / 2 - len(logString) / 2
+        self.logModal.addElement(Elements.Label(strX, 1, logString)).setDefaultForeground(Colors.gold)
+
+        self.mapTab = self.logModal.addElement(Elements.Frame(1, 3, 7, 2, "(M)ap"))
+        self.newsTab = self.logModal.addElement(Elements.Frame(9, 3, 8, 2, "(N)ews")).disable()
+
+        self.logFrame = self.logModal.addElement(Elements.Frame(0, 4, self.logModal.width, self.logModal.height - 4))
+        self.modalBackLabel = self.logModal.addElement(Elements.Label(3, modalH - 1, "TAB - Back"))
+
+        frame = self.logFrame
+        # logMap set in setMap
+        self.logNews = frame.addElement(Elements.List(1, 1, frame.width - 2, frame.height - 2)).disable()
 
         #### Intro modal
         modalX = halfX / 2 - 1
@@ -211,9 +224,35 @@ class PlayState(GameState):
                 'key': Keys.Tab,
                 'ch': None,
                 'fn': self.closeLogModal
-            }
+            },
+            'hideModal2': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.closeLogModal
+            },
+            'showMap': {
+                'key': None,
+                'ch': 'm',
+                'fn': self.showMap
+            },
+            'showNews': {
+                'key': None,
+                'ch': 'n',
+                'fn': self.showNews
+            },
         })
 
+    def showMap(self):
+        self.mapTab.enable()
+        self.logMap.show()
+        self.newsTab.disable()
+        self.logNews.hide()
+
+    def showNews(self):
+        self.mapTab.disable()
+        self.logMap.hide()
+        self.newsTab.enable()
+        self.logNews.show()
 
     def openLogModal(self):
         self.addView(self.logModal)
@@ -232,6 +271,27 @@ class PlayState(GameState):
 
         self.mapElement.center(startingCity.portX, startingCity.portY)
 
+        self.mapX = startingCity.portX
+        self.mapY = startingCity.portY
+        self.logMap.center(self.mapX, self.mapY)
+        self.logMap.setDirectionalInputHandler(self.moveMap)
+
+    def moveMap(self, dx, dy):
+        print "Move ", dx, dy
+        newX = self.mapX + dx
+        newY = self.mapY + dy
+        if 0 <= newX < self.map.width:
+            self.mapX = newX
+        if 0 <= newY < self.map.height:
+            self.mapY = newY
+        self.logMap.center(self.mapX, self.mapY)
+
+    def quit(self):
+        print "Quitting"
+        sys.exit()
+
+
+# TODO: UTIL Stuff.. shouldn't be here
     def checkPath(self, x1, y1, x2, y2):
         path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc)
 
@@ -249,7 +309,3 @@ class PlayState(GameState):
         if not c:
             return 0
         return int(c.terrain.passable)
-
-    def quit(self):
-        print "Quitting"
-        sys.exit()

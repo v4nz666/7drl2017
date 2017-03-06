@@ -179,10 +179,9 @@ mountain = {
     'destructible': True,
 }
 
-
 # TODO: This is game-specific.
 CellType.All = {
-        'water': CellType('~', Colors.blue, Colors.dark_blue, water),
-        'grass': CellType('.', Colors.darkest_green, Colors.darker_green, grass),
-        'mountain': CellType('^', Colors.darker_grey, Colors.darker_green, mountain),
+    'water': CellType('~', Colors.blue, Colors.dark_blue, water),
+    'grass': CellType(',', Colors.darkest_green, Colors.darker_green, grass),
+    'mountain': CellType('^', Colors.darker_grey, Colors.darker_green, mountain),
 }

@@ -81,6 +81,7 @@ class View(object):
       }
     """
     self._keyBoardInputs = inputs
+    return self
 
 
   def setMouseInputs(self, inputs):
