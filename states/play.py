@@ -10,6 +10,8 @@ from RoguePy.libtcod import libtcod
 import config
 import sys
 
+from Ship import Ship
+
 __author__ = 'jripley'
 
 
@@ -275,6 +277,8 @@ class PlayState(GameState):
         self.mapY = startingCity.portY
         self.logMap.center(self.mapX, self.mapY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
+
+        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta)
 
     def moveMap(self, dx, dy):
         print "Move ", dx, dy
