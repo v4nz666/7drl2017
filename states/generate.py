@@ -19,7 +19,7 @@ class GenerateState(GameState):
         self.focusX = config.layout['uiWidth'] / 2
         self.focusY = config.layout['uiHeight'] / 2
 
-    def beforeLoad(self):
+    def initCities(self):
         self.cities = [
             'Tortuga',
             'Clew Bay',
@@ -57,7 +57,8 @@ class GenerateState(GameState):
             'Fort Wellington'
         ]
 
-
+    def beforeLoad(self):
+        self.initCities()
         self.addHandler('gen', 1, self.generateWorld)
 
     def beforeUnload(self):
@@ -190,15 +191,22 @@ class GenerateState(GameState):
 
             if self.validMap():
                 self.placeCities()
-                self.setupMapView()
-                self.removeHandler('gen')
-                print "Done..."
-                return True
+
+                if len(self.map.getMajorCities()) >= 4:
+                    self.setupMapView()
+                    self.removeHandler('gen')
+                    print "Done..."
+                    return True
+                else:
+                    print "Too few major cities. Retrying"
             else:
                 print "invalid map. Retrying"
 
     def placeCities(self):
+
         cityCount = config.world['cityCount']
+        if len(self.cities) < cityCount:
+            self.initCities()
 
         while cityCount:
 
@@ -214,7 +222,7 @@ class GenerateState(GameState):
             elif not self.createCity(x, y):
                 continue
 
-            print 'Placed city at {}, {}'.format(x, y)
+            print 'Placed city at {}, {}. {} left'.format(x, y, cityCount)
             cityCount -= 1
 
     def getNeighboursOfType(self, type, x, y):
@@ -303,10 +311,11 @@ class GenerateState(GameState):
     def validMap(self):
         self.testPoint = self.getOceanCorner()
         print "TEST POINT", self.testPoint
-        if self.testPoint is not False:
-            return True
-        print "Failed to find a test point"
-        return False
+        if self.testPoint is False:
+            print "Failed to find a test point"
+            return False
+
+        return True
 
     def getCityName(self):
         max = len(self.cities)

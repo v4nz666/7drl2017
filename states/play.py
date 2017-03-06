@@ -4,6 +4,7 @@ from RoguePy.UI import Elements
 from RoguePy.UI import Colors
 from RoguePy.Input import Keys
 from RoguePy.State import GameState
+from RoguePy.UI import View
 from RoguePy.libtcod import libtcod
 
 import config
@@ -16,11 +17,55 @@ class PlayState(GameState):
     def init(self):
         self.setupView()
         self.setupInputs()
-        self.focusX = config.layout['uiWidth'] / 2
-        self.focusY = config.layout['uiHeight'] / 2
+
+    def beforeLoad(self):
+        self.addView(self.introModal)
+        self.addHandler('intro', 1, self.doIntro)
+
+    def doIntro(self):
+        majorCities = self.map.getMajorCities()
+        menuItems = []
+        for city in majorCities:
+            menuItems.append({city.name: self.citySelected})
+
+        modal = self.introModal
+        menuHeight = min(len(majorCities), 5)
+        self.introMenu = modal.addElement(Elements.Menu(1, modal.height - menuHeight - 1, modal.width - 2, menuHeight, menuItems))
+
+        self.introModal.setKeyInputs({
+            'moveUp': {
+                'key': Keys.Up,
+                'ch': 'w',
+                'fn': self.introMenu.selectUp
+            },
+            'moveDn': {
+                'key': Keys.Down,
+                'ch': 's',
+                'fn': self.introMenu.selectDown
+            },
+            'selectCity': {
+                'key': Keys.Enter,
+                'ch': None,
+                'fn': self.introMenu.selectFn
+            },
+            'selectCity2': {
+                'key': Keys.NumPadEnter,
+                'ch': None,
+                'fn': self.introMenu.selectFn
+            }
+        })
+        self.removeHandler('intro')
+
+
+    def leavePort(self, city):
+        pass
 
     def setMap(self, map):
         self.map = map
+        self.mapElement = Elements.Map(0, 0, config.layout['uiWidth'] - self.infoPanel.width, config.layout['uiHeight'],
+                                       self.map)
+        self.view.addElement(self.mapElement)
+        self.setFocus(self.mapElement)
 
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
@@ -86,66 +131,106 @@ class PlayState(GameState):
         self.infoPanel.addElement(Elements.Label(1, 30, "Rum")).setDefaultForeground(Colors.darker_azure)
         self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 30, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 31, "Coffee")).setDefaultForeground(Colors.darker_azure)
-        self.coffeeCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))).\
+        self.infoPanel.addElement(Elements.Label(1, 31, "Wood")).setDefaultForeground(Colors.darker_azure)
+        self.woodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 32, "Spice")).setDefaultForeground(Colors.darker_azure)
-        self.spiceCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))).\
+        self.infoPanel.addElement(Elements.Label(1, 32, "Cloth")).setDefaultForeground(Colors.darker_azure)
+        self.clothCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-
-
-
+        self.infoPanel.addElement(Elements.Label(1, 33, "Coffee")).setDefaultForeground(Colors.darker_azure)
+        self.coffeeCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 33, "0".zfill(5))). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 34, "Spice")).setDefaultForeground(Colors.darker_azure)
+        self.spiceCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 34, "0".zfill(5))). \
+            setDefaultForeground(Colors.azure)
 
         self.helpPanel = self.view.addElement(Elements.Frame(55, 35, 20, 15, "Help"))
-
         self.helpPanel.addElement(Elements.Label(1, 1, "A/D")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 1, "Heading L/R")).setDefaultForeground(Colors.azure)
-
         self.helpPanel.addElement(Elements.Label(1, 2, "W/S")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 2, "Sails Up/Dn")).setDefaultForeground(Colors.azure)
-
         self.helpPanel.addElement(Elements.Label(1, 4, "TAB")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 4, "Cptn's Log")).setDefaultForeground(Colors.azure)
-
         self.helpPanel.addElement(Elements.Label(1, 6, "SPC")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 6, "Anchor Up/Dn")).setDefaultForeground(Colors.azure)
 
+        halfX = self.view.width / 2
+        halfY = self.view.height / 2
 
-    def setupMapView(self):
-        self.mapElement = Elements.Map(0, 0, config.layout['uiWidth'] - self.infoPanel.width, config.layout['uiHeight'], self.map)
-        self.view.addElement(self.mapElement)
-        self.setFocus(self.mapElement)
+        #### Captain's Log Modal
+        modalX = halfX / 4 - 1
+        modalY = halfY / 4
+        modalW = halfX * 3 / 2 + 2
+        modalH = halfY * 3 / 2
+
+        self.logModal = View(modalW, modalH, modalX, modalY)
+        self.modalFrame = self.logModal.addElement(Elements.Frame(0, 0, modalW, modalH))
+        self.modalFrame.setTitle("Modal Elements")
+        self.modalLabel = self.logModal.addElement(Elements.Label(3, modalH - 1, "TAB - Back"))
+
+        #### Intro modal
+        modalX = halfX / 2 - 1
+        modalY = halfY / 2
+        modalW = halfX
+        modalH = halfY
+
+        self.introModal = View(modalW, modalH, modalX, modalY)
+        self.introModal.addElement(Elements.Frame(0, 0, modalW, modalH, "Welcome!"))
+        introText =\
+            "  Welcome to Rogue Basin. Home of great opportunity for a young captain like yourself. " +\
+            "There has been a drastic increase in Pirate activity of late, and as such, the King " +\
+            "has been handing out Letters of Marque to just about anyone who's willing to help rid " +\
+            "the seas of the Pirate threat.\n\n" +\
+            "  Never one to miss out on a chance for new adventures, you snatch up the chance, gather " +\
+            "your life savings and head to the big city to find a ship."
+        self.introModal.addElement(Elements.Text(1, 2, modalW - 2, 15, introText)). \
+            setDefaultForeground(Colors.dark_green)
+
+        pickACity =\
+            "Please choose your starting Port"
+        self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
+            setDefaultForeground(Colors.dark_red)
 
     def setupInputs(self):
-
         # Inputs. =================================================================================
         self.view.setKeyInputs({
-            'next': {
-                'key': Keys.Space,
-                'ch': None,
-                'fn': self.play
-            },
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': sys.exit
+                'fn': self.quit
+            },
+            'showLogModal': {
+              'key': Keys.Tab,
+              'ch': None,
+              'fn': self.openLogModal
             }
         })
 
-        def leftClick(mouse):
-            print "Left click"
-            charSize = libtcod.sys_get_char_size()
-            x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
-
-            if x == -1 or y == -1:
-                return
-            c = self.map.getCell(x, y)
-            if c.entity:
-                print c.entity
-
-        self.view.setMouseInputs({
-            'lClick': leftClick
+        self.logModal.setKeyInputs({
+            'hideModal': {
+                'key': Keys.Tab,
+                'ch': None,
+                'fn': self.closeLogModal
+            }
         })
+
+
+    def openLogModal(self):
+        self.addView(self.logModal)
+
+    def closeLogModal(self):
+        self.removeView()
+
+    def citySelected(self, index):
+
+        cities = self.map.getMajorCities()
+
+        startingCity = cities[index]
+        print "Starting at ", startingCity
+        # Close intro modal
+        self.removeView()
+
+        self.mapElement.center(startingCity.portX, startingCity.portY)
 
     def checkPath(self, x1, y1, x2, y2):
         path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc)
@@ -165,7 +250,6 @@ class PlayState(GameState):
             return 0
         return int(c.terrain.passable)
 
-    def play(self):
-        self.manager.getState('play') \
-            .setMap(self.map)
-        self.manager.setNextState('play')
+    def quit(self):
+        print "Quitting"
+        sys.exit()

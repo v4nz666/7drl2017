@@ -11,11 +11,10 @@ class City(Entity):
             'General Store'
         ]
         self.size = randint(1, 4)
-
         self.setShops()
 
     def __str__(self):
-        return '{} at {}, {}\n  Shops: {}\n Port: {}, {}'.format(self.name, self.x, self.y, self.shops, self.portX, self.portY)
+        return '{}[{}] at {}, {}\n  Shops: {}\n Port: {}, {}'.format(self.name, self.size, self.x, self.y, self.shops, self.portX, self.portY)
 
     def setShops(self):
         possibleShops = [

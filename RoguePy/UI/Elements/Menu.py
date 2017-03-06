@@ -70,10 +70,9 @@ class Menu(List):
         newIndex = 0
       elif newIndex >= menuLength:
         newIndex = menuLength - 1
-
     self.selected = newIndex
     if not wrapped:
-      if self.selected >= self._offset  + self.height:
+      if self.selected >= self._offset + self.height:
         self.scrollDown()
       elif self.selected < self._offset:
         self.scrollUp()
