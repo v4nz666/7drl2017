@@ -15,6 +15,3 @@ class Ship(Entity):
         self.sails = 0
 
         super(Ship, self).__init__(map, x, y, self.name, self.ch, color)
-
-    
-

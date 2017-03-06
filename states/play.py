@@ -1,4 +1,5 @@
 import util
+from Captain import Captain
 from RoguePy.Game import Map, Entity
 from RoguePy.UI import Elements
 from RoguePy.UI import Colors
@@ -279,6 +280,10 @@ class PlayState(GameState):
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
         playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta)
+        #TODO Let the player pick from a few randomly generated captains
+        self.player = Captain()
+        self.player.setShip(playerShip)
+        self.player.gold = 700
 
     def moveMap(self, dx, dy):
         print "Move ", dx, dy
