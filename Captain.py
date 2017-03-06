@@ -1,7 +1,8 @@
 from util import randint
 
+
 class Captain(object):
-    def __init__(self, ship):
+    def __init__(self, ship=None):
         # TODO replace with name generation
         self.name = "Captain"
         self.morale = 50
@@ -12,3 +13,5 @@ class Captain(object):
             'charisma': randint(10)
         }
         self.gold = 0
+    def setShip(self, ship):
+        self.ship = ship

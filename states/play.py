@@ -280,7 +280,7 @@ class PlayState(GameState):
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
         playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta)
-        #TODO Let the player pick from a few randomly generated captains
+        # TODO Let the player pick from a few randomly generated captains
         self.player = Captain()
         self.player.setShip(playerShip)
         self.player.gold = 700
