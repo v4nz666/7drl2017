@@ -109,6 +109,21 @@ class GenerateState(GameState):
             }
         })
 
+        def leftClick(mouse):
+            print "Left click"
+            charSize = libtcod.sys_get_char_size()
+            x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
+
+            if x == -1 or y == -1:
+                return
+            c = self.map.getCell(x, y)
+            if c.entity:
+                print c.entity
+
+        self.view.setMouseInputs({
+            'lClick': leftClick
+        })
+
     def regenerate(self):
         self.beforeUnload()
         self.beforeLoad()
@@ -258,13 +273,24 @@ class GenerateState(GameState):
 
     def createCity(self, x, y):
         cell = self.map.getCell(x, y)
-        neighbours = self.getNeighboursOfType('water', x, y)
-        if not neighbours:
+
+        if cell.entity:
+            print "Entity present"
             return False
 
-        for nx, ny in neighbours:
-            n = neighbours[nx, ny]
-            if not self.checkPath(x, y, self.testPoint[0], self.testPoint[1]):
+        waterNeighbours = self.getNeighboursOfType('water', x, y)
+        if not waterNeighbours:
+            return False
+
+        grassNeighbours = self.getNeighboursOfType('grass', x, y)
+        for nx, ny in grassNeighbours:
+            c = grassNeighbours[nx, ny]
+            if c.entity:
+                print "Neighbouring tile has entity"
+                return False
+
+        for nx, ny in waterNeighbours:
+            if not self.checkPath(nx, ny, self.testPoint[0], self.testPoint[1]):
                 print "no path to ocean"
                 continue
             else:

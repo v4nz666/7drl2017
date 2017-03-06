@@ -17,6 +17,7 @@ class Map:
         else:
             self.cells = cells
         self.listeners = {}
+        self.cities = {}
 
     @staticmethod
     def FromHeightmap(hm, thresholds):
@@ -115,8 +116,13 @@ class Map:
 
     ### Pirates hacks
     def addCity(self, x, y, portX, portY, name):
-        self.addEntity(City(self, x, y, name, '#', Colors.black), x, y)
+        c = City(self, x, y, name, '#', Colors.black)
+        c.setPort(portX, portY)
+        self.addEntity(c, x, y)
         self.getCell(portX, portY).isPort = True
+
+        self.cities[name] = c
+
 
 class Cell:
     def __init__(self, typeName):

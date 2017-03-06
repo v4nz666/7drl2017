@@ -84,6 +84,7 @@ class View(object):
 
 
   def setMouseInputs(self, inputs):
+    print "Mouse inputs set", inputs
     self._mouseInputs = inputs
 
 

@@ -1,5 +1,5 @@
 
-class Entity:
+class Entity(object):
 
     def __init__(self, map, x, y, name, ch, fg):
         c = map.getCell(x, y)

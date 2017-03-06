@@ -41,6 +41,27 @@ class Map(Element):
     self.setDirty()
     return self
 
+  def fromScreen(self, sx, sy):
+    """
+    Return the map coordinates of a given onscreen x, y pair accounting for centering.
+
+    :param sx: int   The on screen X coordinate to calculate the map coordinate of.
+    :param sy: int   The on screen X coordinate to calculate the map coordinate of.
+    :return: tuple|bool  Adjusted (x, y) coordinates; False if the given x, y coordinates lie outside this element
+    """
+
+    if sx < self.x or sx >= self.x + self.width:
+        sx = False
+    if sy < self.y or sy >= self.y + self.height:
+        sy = False
+
+    mapX = sx + self._offsetX - self.x
+    mapY = sy + self._offsetY - self.y
+
+    if sx and sy:
+        return mapX, mapY
+    else:
+        return -1, -1
 
   def onScreen(self, x, y):
     """
@@ -50,7 +71,7 @@ class Map(Element):
     :param y: int   The actual map X coordinate to calculate the onscreen coordinate of.
     :return: tuple  Adjusted (x, y) coordinates
     """
-    return (x - self._offsetX, y - self._offsetY)
+    return x - self._offsetX, y - self._offsetY
   
   def draw(self):
     for sy in range(self.height):
