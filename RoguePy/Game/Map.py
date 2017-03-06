@@ -1,4 +1,7 @@
-from .. import UI
+import chars
+import config
+from RoguePy.libtcod import libtcod
+from RoguePy.UI import Colors
 
 
 class Map:
@@ -10,6 +13,27 @@ class Map:
     else:
       self.cells = cells
     self.listeners = {}
+
+  @staticmethod
+  def FromHeightmap(hm, thresholds):
+    mapMin, mapMax = libtcod.heightmap_get_minmax(hm)
+    mapMax = mapMax - mapMin
+
+    w = config.world['width']
+    h = config.world['height']
+
+    cells = []
+
+    for c in range(w*h):
+      x = c%w
+      y = c/w
+
+      v = libtcod.heightmap_get_value(hm, x, y)
+      for t in thresholds:
+        if v <= t['range'] * mapMax:
+          cells.append(Cell(t['type']))
+          break
+    return Map(w, h, cells)
 
   @staticmethod
   def FromFile(path):
@@ -77,17 +101,38 @@ class Cell:
     self.items = []
     pass
 
-
 class CellType:
-  def __init__(self, char, fg, bg):
+  def __init__(self, char, fg, bg, opts):
     self.char = char
     self.fg = fg
     self.bg = bg
+    self.opts = opts
+
+water = {
+  'passable': True,
+  'transparent': True,
+  'destructible': False,
+}
+grass = {
+  'passable': False,
+  'transparent': True,
+  'destructible': False,
+}
+tree = {
+  'passable': False,
+  'transparent': True,
+  'destructible': True,
+}
+mountain = {
+  'passable': False,
+  'transparent': False,
+  'destructible': True,
+}
+
 
 # TODO: This is game-specific.
 CellType.All = {
-  'wall': CellType('X', UI.Colors.light_gray, UI.Colors.black),
-  'floor': CellType('.', UI.Colors.light_gray, UI.Colors.black),
-  'door': CellType('+', UI.Colors.copper, UI.Colors.black),
-  'window': CellType('+', UI.Colors.light_blue, UI.Colors.black),
+    'water': CellType(b'~', Colors.blue, Colors.dark_blue, water),
+    'grass': CellType(b'.', Colors.dark_green, Colors.darker_green, grass),
+    'mountain': CellType('^', Colors.white, Colors.darker_green, mountain),
 }

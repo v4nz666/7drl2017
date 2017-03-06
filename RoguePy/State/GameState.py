@@ -2,7 +2,7 @@
 GameState
 '''
 from RoguePy import Input
-from RoguePy import UI
+from RoguePy.UI import View
 from TickHandler import TickHandler
 
 
@@ -14,11 +14,22 @@ class GameState(object):
 
     self.tickHandlers = {}
     self.handlerQueue = []
-    self.view = None
+    
+    self.focused = None
 
+  # Clear all existing views, and create one covering the entire ui
   def initView(self, ui):
-    self.view = UI.View(ui)
-  
+    self.__views = [View(ui.width, ui.height)]
+
+  # Add a view onto the stack
+  def addView(self, view):
+    self.__views.append(view)
+  # Pop a view off the stack
+  def removeView(self):
+    if not len(self.__views) > 1 :
+      raise IndexError("Tried to close last View on stack")
+    self.__views.pop()
+
   @property
   def name(self):
     return self.__name
@@ -43,10 +54,7 @@ class GameState(object):
 
   @property
   def view(self):
-    return self.__view
-  @view.setter
-  def view(self,view):
-    self.__view = view
+    return self.__views[-1]
 
   def addHandler(self, name, interval, handler):
     if not name in self.tickHandlers:
@@ -65,7 +73,13 @@ class GameState(object):
     self.inputHandler.setKeyInputs(key)
     self.inputHandler.setMouseInputs(mouse)
     self.inputHandler.handleInput()
-  
+
+  def setFocus(self, el):
+    self.focused = el
+
+  def blur(self):
+    self.focused = None
+
   def beforeLoad(self):
     pass
   def beforeUnload(self):

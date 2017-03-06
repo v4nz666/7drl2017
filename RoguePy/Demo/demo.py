@@ -41,6 +41,3 @@ stateManager.setCurrentState('demo6')
 
 while not ui.is_closed():
   stateManager.doTick()
-
-  
-  

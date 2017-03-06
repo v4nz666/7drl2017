@@ -26,7 +26,6 @@ class StateManager():
   @property
   def ui(self):
     return self.__ui
-
   @ui.setter
   def ui(self, ui):
     self.__ui = ui

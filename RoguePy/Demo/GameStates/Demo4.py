@@ -84,7 +84,7 @@ class Demo4(GameState):
         'fn': self.attack
       }
     })
-  
+
   def tick(self):
     self.updateStats()
   
@@ -96,6 +96,9 @@ class Demo4(GameState):
   ###
 
   def attack(self):
+    if not self.playerStatFrame.enabled:
+      return
+
     self.player.hp -= 1
     if self.player.hp <= 0:
       self.playerStatFrame.disable()

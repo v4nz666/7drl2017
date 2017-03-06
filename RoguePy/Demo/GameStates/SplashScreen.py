@@ -34,6 +34,7 @@ class SplashScreen(GameState):
 
   def endAnimation(self):
     self.elements['pressKey'].show()
+    self.setFocus(self.elements['pressKey'])
     self._animationComplete = True
     time.sleep(0)
     self.clearViewInputs()

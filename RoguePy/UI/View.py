@@ -7,13 +7,12 @@ from RoguePy.libtcod import libtcod
 
 class View(object):
 
-  def __init__(self, ui):
-    self.ui = ui
+  def __init__(self, w, h, x=0, y=0 ):
 
-    self.x = 0
-    self.y = 0
-    self.width = ui.getWidth()
-    self.height = ui.getHeight()
+    self.width = w
+    self.height = h
+    self.x = x
+    self.y = y
 
     self.setDirty(True)
 
@@ -174,6 +173,7 @@ class View(object):
         e.setDefaultForeground(fg, True)
 
     self.setDirty()
+    return self
 
   def setDefaultBackground(self, bg, cascade=False):
     self.bg = bg
@@ -183,6 +183,7 @@ class View(object):
         e.setDefaultBackground(bg, True)
 
     self.setDirty()
+    return self
 
   #TODO Convert fg, bg to a tuple
   def setDefaultColors(self, fg = libtcod.white, bg = libtcod.black, cascade=False):

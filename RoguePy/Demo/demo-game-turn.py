@@ -79,6 +79,7 @@ class MainState(RoguePy.GameState):
 
         # TODO: This must be called after setKeyInputs on the element, or it will get blown away...
         map.setDirectionalInputHandler(movePlayer)
+        self.setFocus(map)
 
         # Miscellany. =============================================================================
         import random

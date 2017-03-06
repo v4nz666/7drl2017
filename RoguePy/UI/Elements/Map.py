@@ -76,50 +76,50 @@ class Map(Element):
   #   a subset of the inputs, not the whole input set.
   # TODO: If input binding is streamlined, this won't work anymore.
   def setDirectionalInputHandler(self, fn):
+    print "Inputs set"
     from RoguePy.Input import Keys
-    self._inputs['move_sw'] = {
+    self._keyBoardInputs['move_sw'] = {
         'key' : Keys.NumPad1,
         'ch'  : None,
         'fn'  : lambda: fn(-1,1)
     }
-    self._inputs['move_s'] = {
+    self._keyBoardInputs['move_s'] = {
         'key' : Keys.NumPad2,
         'ch'  : None,
         'fn'  : lambda: fn(0,1)
     }
-    self._inputs['move_se'] = {
+    self._keyBoardInputs['move_se'] = {
         'key' : Keys.NumPad3,
         'ch'  : None,
         'fn'  : lambda: fn(1,1)
     }
-    self._inputs['move_w'] = {
+    self._keyBoardInputs['move_w'] = {
         'key' : Keys.NumPad4,
         'ch'  : None,
         'fn'  : lambda: fn(-1,0)
     }
-    self._inputs['move_none'] = {
+    self._keyBoardInputs['move_none'] = {
         'key' : Keys.NumPad5,
         'ch'  : None,
         'fn'  : lambda: fn(0,0)
     }
-    self._inputs['move_e'] = {
+    self._keyBoardInputs['move_e'] = {
         'key' : Keys.NumPad6,
         'ch'  : None,
         'fn'  : lambda: fn(1,0)
     }
-    self._inputs['move_nw'] = {
+    self._keyBoardInputs['move_nw'] = {
         'key' : Keys.NumPad7,
         'ch'  : None,
         'fn'  : lambda: fn(-1,-1)
     }
-    self._inputs['move_n'] = {
+    self._keyBoardInputs['move_n'] = {
         'key' : Keys.NumPad8,
         'ch'  : None,
         'fn'  : lambda: fn(0,-1)
     }
-    self._inputs['move_ne'] = {
+    self._keyBoardInputs['move_ne'] = {
         'key' : Keys.NumPad9,
         'ch'  : None,
         'fn'  : lambda: fn(1,-1)
     }
-    
