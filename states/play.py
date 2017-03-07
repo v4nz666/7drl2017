@@ -26,7 +26,6 @@ class PlayState(GameState):
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
 
-
     def doIntro(self):
         majorCities = self.map.getMajorCities()
         menuItems = []
@@ -43,9 +42,19 @@ class PlayState(GameState):
                 'ch': 'w',
                 'fn': self.introMenu.selectUp
             },
+            'moveUp2': {
+                'key': Keys.NumPad8,
+                'ch': 'W',
+                'fn': self.introMenu.selectUp
+            },
             'moveDn': {
                 'key': Keys.Down,
                 'ch': 's',
+                'fn': self.introMenu.selectDown
+            },
+            'moveDn2': {
+                'key': Keys.NumPad2,
+                'ch': 'S',
                 'fn': self.introMenu.selectDown
             },
             'selectCity': {
@@ -84,7 +93,7 @@ class PlayState(GameState):
         self.mapOverlay.setDirty(True)
         cursorX, cursorY = self.logMap.onScreen(self.mapX, self.mapY)
         libtcod.console_put_char_ex(
-            self.mapOverlay.console, cursorX, cursorY, '+', Colors.chartreuse, Colors.white)
+            self.mapOverlay.console, cursorX, cursorY, '+', Colors.light_chartreuse, Colors.white)
 
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
@@ -196,7 +205,7 @@ class PlayState(GameState):
 
         frame = self.logFrame
         # logMap set in setMap
-        self.logNews = frame.addElement(Elements.List(1, 1, frame.width - 2, frame.height - 2)).disable()
+        self.logNews = frame.addElement(Elements.List(1, 1, frame.width - 2, frame.height - 2)).hide()
 
         #### Intro modal
         modalX = halfX / 2 - 1
@@ -259,16 +268,17 @@ class PlayState(GameState):
             },
         })
 
-
     def showMap(self):
-        self.clearCityLabel()
+        if self.logMap.visible:
+            return
         self.mapTab.enable()
         self.logMap.show()
         self.newsTab.disable()
         self.logNews.hide()
 
     def showNews(self):
-        self.clearCityLabel()
+        if self.logNews.visible:
+            return
         self.mapTab.disable()
         self.logMap.hide()
         self.newsTab.enable()
@@ -341,7 +351,6 @@ class PlayState(GameState):
         #   (See https://github.com/v4nz666/7drl2017/issues/19)
         except AttributeError:
             print 'failed at {},{}'.format(self.mapX, self.mapY)
-
 
     @staticmethod
     def quit():
