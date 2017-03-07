@@ -7,7 +7,6 @@ from RoguePy.UI import Colors
 from City import City
 
 
-
 class Map:
     def __init__(self, w, h, cells=None):
         self.width = w
@@ -30,8 +29,8 @@ class Map:
         cells = []
 
         for c in range(w*h):
-            x = c%w
-            y = c/w
+            x = c % w
+            y = c / w
 
             v = libtcod.heightmap_get_value(hm, x, y)
             for t in thresholds:
@@ -111,6 +110,8 @@ class Map:
         c = self.getCell(x, y)
         if c.entity is None:
             self.getCell(x, y).entity = e
+            if e.canSee:
+                e.calculateFov()
             return True
         return False
 
@@ -139,6 +140,7 @@ class Cell:
         self.entity = None
         self.isPort = False
         self.seen = False
+
         self.items = []
         pass
 

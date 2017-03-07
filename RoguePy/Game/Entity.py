@@ -1,17 +1,22 @@
 
 class Entity(object):
 
-    def __init__(self, map, x, y, name, ch, fg):
+    def __init__(self, map, x, y, name, ch, fg, canSee=False):
         c = map.getCell(x, y)
         if ( c.entity != None ):
             raise Exception("Entity already present in map cell (%d,%d)" % (x, y))
-        c.entity = self
         self.map = map
         self.x = x
         self.y = y
         self.name = name
         self.ch = ch
         self.fg = fg
+        self.canSee = canSee
+
+        map.addEntity(self, x, y)
+
+    def updateFov(self):
+        pass
 
     def tryMove(self, dx, dy):
         # Rest / skip check.

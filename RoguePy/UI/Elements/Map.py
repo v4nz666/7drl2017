@@ -5,7 +5,9 @@ from .. import Colors
 
 CellView = namedtuple('CellView', ['char', 'fg', 'bg'])
 
+
 class Map(Element):
+
   def __init__(self, x, y, w, h, _map):
     super(Map, self).__init__(x, y, w, h)
     self._map = _map
@@ -13,6 +15,11 @@ class Map(Element):
     self._offsetY = 0
     self.halfW = self.width / 2
     self.halfH = self.height / 2
+    self.player = None
+    self.isStatic = False
+
+  def setPlayer(self, player):
+      self.player = player
 
   def center(self, x, y):
     """
@@ -80,16 +87,19 @@ class Map(Element):
         y = sy + self._offsetY
         if (x >= 0 and x < self._map.width and y >= 0 and y < self._map.height):
           c = self._map.getCell(x, y)
-          if not c:
+          if not c or not c.seen:
               continue
-          cv = self.cellToView(c)
+          if self.isStatic or (self.player and self.player.inSight(x, y)):
+              cv = self.cellToView(c, True)
+          else:
+              cv = self.cellToView(c)
           libtcod.console_put_char_ex(self.console, sx, sy, cv.char, cv.fg, cv.bg)
 
     self.setDirty(False)
 
-  def cellToView(self, c):
+  def cellToView(self, c, includeEntities=False):
     result = CellView(c.terrain.char, c.terrain.fg, c.terrain.bg)
-    if c.entity != None:
+    if c.entity != None and includeEntities:
       result = CellView(c.entity.ch, c.entity.fg, result.bg)
     elif c.items:
       pass

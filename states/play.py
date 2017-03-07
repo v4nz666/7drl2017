@@ -83,6 +83,7 @@ class PlayState(GameState):
 
         self.logMap = self.logFrame.addElement(
             Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
+        self.logMap.isStatic = True
         self.mapOverlay = self.logMap.addElement(Elements.Element(0, 0, self.logMap.width, self.logMap.height))
         self.mapOverlay.bgOpacity = 0
         self.mapOverlay.draw = self.drawOverlay
@@ -93,7 +94,7 @@ class PlayState(GameState):
         self.mapOverlay.setDirty(True)
         cursorX, cursorY = self.logMap.onScreen(self.mapX, self.mapY)
         libtcod.console_put_char_ex(
-            self.mapOverlay.console, cursorX, cursorY, '+', Colors.light_chartreuse, Colors.white)
+            self.mapOverlay.console, cursorX, cursorY, '+', Colors.chartreuse, Colors.white)
 
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
@@ -303,11 +304,12 @@ class PlayState(GameState):
         self.logMap.center(self.mapX, self.mapY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
-        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta)
+        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta, isPlayer=True)
         # TODO Let the player pick from a few randomly generated captains
         self.player = Captain()
         self.player.setShip(playerShip)
         self.player.gold = 700
+        self.mapElement.setPlayer(self.player)
 
     def clearCityLabel(self):
         if self.cityLabel is not None:
@@ -328,7 +330,10 @@ class PlayState(GameState):
 
         self.logMap.center(self.mapX, self.mapY)
 
+
         cell = self.map.getCell(self.mapX, self.mapY)
+        if not cell.seen:
+            return
         try:
             if isinstance(cell.entity, City):
                 city = cell.entity
