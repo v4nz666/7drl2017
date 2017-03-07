@@ -50,11 +50,11 @@ class Dial(Element):
         return self.val
 
     def sub(self, deg):
-        self.setVal(self.val + deg)
+        self.setVal(self.val - deg)
         self.setDirty(True)
 
     def add(self, deg):
-        self.setVal(self.val - deg)
+        self.setVal(self.val + deg)
         self.setDirty(True)
 
     def draw(self):
@@ -71,8 +71,7 @@ class Dial(Element):
 
     def cacheFaces(self):
         self.faces = {
-            'l':
-                [
+            'l': [
                 [  # 348.75 - 11.25
                     '/     \\',
                     '       ',
@@ -219,8 +218,7 @@ class Dial(Element):
                     '\\     /'
                 ]
             ],
-            's':
-                [
+            's': [
                 [  # 348.75 - 11.25
                     '/   \\',
                     '     ',

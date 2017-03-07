@@ -1,84 +1,84 @@
 
 shipTypes = {
     "Ship o'th' Line": {
-        'Speed': 50,
-        'Turn': 60,
-        'Guns': 50,
-        'Min Crew': 30,
-        'Max Crew': 200,
-        'Size': 750,
-        'Price': 20000
+        'maxSpeed': 25,
+        'turnSpeed': 60,
+        'guns': 50,
+        'minCrew': 30,
+        'maxCrew': 200,
+        'size': 750,
+        'price': 20000
     },
     "Galleon": {
-        'Speed': 50,
-        'Turn': 50,
-        'Guns': 40,
-        'Min Crew': 30,
-        'Max Crew': 200,
-        'Size': 650,
-        'Price': 15000
+        'maxSpeed': 20,
+        'turnSpeed': 50,
+        'guns': 40,
+        'minCrew': 30,
+        'maxCrew': 200,
+        'size': 650,
+        'price': 15000
     },
     "Brig": {
-        'Speed': 90,
-        'Turn': 70,
-        'Guns': 32,
-        'Min Crew': 25,
-        'Max Crew': 150,
-        'Size': 550,
-        'Price': 10000
+        'maxSpeed': 30,
+        'turnSpeed': 70,
+        'guns': 32,
+        'minCrew': 25,
+        'maxCrew': 150,
+        'size': 550,
+        'price': 10000
     },
     "Brigantine": {
-        'Speed': 120,
-        'Turn': 80,
-        'Guns': 16,
-        'Min Crew': 25,
-        'Max Crew': 125,
-        'Size': 500,
-        'Price': 8000
+        'maxSpeed': 35,
+        'turnSpeed': 80,
+        'guns': 16,
+        'minCrew': 25,
+        'maxCrew': 125,
+        'size': 500,
+        'price': 8000
     },
     "Frigate": {
-        'Speed': 90,
-        'Turn': 85,
-        'Guns': 24,
-        'Min Crew': 20,
-        'Max Crew': 50,
-        'Size': 300,
-        'Price': 5000
+        'maxSpeed': 25,
+        'turnSpeed': 85,
+        'guns': 24,
+        'minCrew': 20,
+        'maxCrew': 50,
+        'size': 300,
+        'price': 5000
     },
     "Clipper": {
-        'Speed': 160,
-        'Turn': 90,
-        'Guns': 16,
-        'Min Crew': 20,
-        'Max Crew': 45,
-        'Size': 250,
-        'Price': 3000
+        'maxSpeed': 45,
+        'turnSpeed': 90,
+        'guns': 16,
+        'minCrew': 20,
+        'maxCrew': 45,
+        'size': 250,
+        'price': 3000
     },
     "Schooner": {
-        'Speed': 150,
-        'Turn': 100,
-        'Guns': 12,
-        'Min Crew': 15,
-        'Max Crew': 30,
-        'Size': 150,
-        'Price': 1000
+        'maxSpeed': 40,
+        'turnSpeed': 100,
+        'guns': 12,
+        'minCrew': 15,
+        'maxCrew': 30,
+        'size': 150,
+        'price': 1000
     },
     "Sloop": {
-        'Speed': 100,
-        'Turn': 100,
-        'Guns': 10,
-        'Min Crew': 5,
-        'Max Crew': 20,
-        'Size': 150,
-        'Price': 500
+        'maxSpeed': 30,
+        'turnSpeed': 100,
+        'guns': 10,
+        'minCrew': 5,
+        'maxCrew': 20,
+        'size': 150,
+        'price': 500
     },
     "Caravel": {
-        'Speed': 80,
-        'Turn': 100,
-        'Guns': 8,
-        'Min Crew': 5,
-        'Max Crew': 15,
-        'Size': 100,
-        'Price': 450
+        'maxSpeed': 25,
+        'turnSpeed': 100,
+        'guns': 8,
+        'minCrew': 5,
+        'maxCrew': 15,
+        'size': 100,
+        'price': 450
     }
 }

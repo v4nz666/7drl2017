@@ -94,9 +94,37 @@ class Map:
     def trigger(self, eventName, sender, e):
         # print "'%s' triggered by %s" % (eventName, sender), "e = ", e
         eventListeners = self.listeners.get(eventName)
-        if not eventListeners: return
+        if not eventListeners:
+            return
         for listener in eventListeners:
             listener(sender, e)
+
+    def getNeighboursOfType(self, type, x, y):
+            neighbours = self.getNeighbours(x, y)
+            toPurge = []
+            for neighbourX, neighbourY in neighbours:
+                c = neighbours[neighbourX, neighbourY]
+                if c.type != type:
+                    toPurge.append(c)
+
+            neighbours = {k: v for k, v in neighbours.items() if v not in toPurge}
+            if len(neighbours):
+                return neighbours
+            else:
+                return False
+
+    def getNeighbours(self, x, y, diagonals=True):
+        cells = {}
+        for dx in range(-1, 2):
+            for dy in range(-1,2):
+                neighbourX = x + dx
+                neighbourY = y + dy
+                if not diagonals and (not neighbourX or not neighbourY):
+                    continue
+                c = self.getCell(neighbourX, neighbourY)
+                if c:
+                    cells[neighbourX, neighbourY] = c
+        return cells
 
     # Hard coded 1 entity per tile
     def removeEntity(self, e, x, y):

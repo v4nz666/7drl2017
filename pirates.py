@@ -11,8 +11,8 @@ import RoguePy
 from RoguePy.Input import Keys
 from RoguePy.UI import Elements
 
-#TODO set this to a reasonable value
-RoguePy.setFps(999)
+RoguePy.setFps(config.fps)
+
 
 game = Game("Pirates of Rogue Basin", config.layout['uiWidth'], config.layout['uiHeight'], False)
 game.addState(SplashState('splash'))

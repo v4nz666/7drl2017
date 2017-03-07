@@ -223,20 +223,6 @@ class GenerateState(GameState):
             print 'Placed city at {}, {}. {} left'.format(x, y, cityCount)
             cityCount -= 1
 
-    def getNeighboursOfType(self, type, x, y):
-        cells = {}
-        for dx in range(-1, 2):
-            for dy in range(-1, 2):
-                neighbourX = x + dx
-                neighbourY = y + dy
-                c = self.map.getCell(x + dx, y + dy)
-                if c and (dx or dy) and c.type == type:
-                    cells[neighbourX, neighbourY] = c
-        if len(cells):
-            return cells
-        else:
-            return False
-
     def getOceanCorner(self):
         maxX = self.map.width - 1
         maxY = self.map.height - 1
@@ -284,11 +270,11 @@ class GenerateState(GameState):
             print "Entity present"
             return False
 
-        waterNeighbours = self.getNeighboursOfType('water', x, y)
+        waterNeighbours = self.map.getNeighboursOfType('water', x, y)
         if not waterNeighbours:
             return False
 
-        grassNeighbours = self.getNeighboursOfType('grass', x, y)
+        grassNeighbours = self.map.getNeighboursOfType('grass', x, y)
         if grassNeighbours:
             for nx, ny in grassNeighbours:
                 c = grassNeighbours[nx, ny]

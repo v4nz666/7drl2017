@@ -1,5 +1,6 @@
 import sys
 
+import config
 from RoguePy.libtcod import libtcod
 from RoguePy.Game import Entity
 from shipTypes import shipTypes
@@ -14,17 +15,54 @@ class Ship(Entity):
         self.anchored = True
         self.hullDamage = 0
         self.sailDamage = 0
-        self.heading = 0
+        self.heading = 0.0
+        self.headingRad = 0.0
         self.sails = 0
+        self.speed = 0.0
 
         self.canSee = True
         self.viewRadius = 5
-        super(Ship, self).__init__(map, x, y, self.name, self.ch, color)
+        
+        self.x = x
+        self.y = y
+
+        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, color)
 
         self.isPlayer = isPlayer
 
+        # To be overridden by shipTypes
+        self.maxSpeed = 0
+        self.turnSpeed = 0
+        self.guns = 0
+        self.minCrew = 0
+        self.maxCrew = 0
+        self.size = 0
+        self.price = 0
+
+        for attr, value in shipTypes[type].iteritems():
+            setattr(self, attr, value)
+
         self._initFovMap()
         self.calculateFovMap()
+
+    @property
+    def x(self):
+        return self.__x
+    @x.setter
+    def x(self, x):
+        self.__x = x
+        self.mapX = int(round(x))
+
+    @property
+    def y(self):
+        return self.__y
+    @y.setter
+    def y(self, y):
+        self.__y = y
+        self.mapY = int(round(y))
+
+    def toggleAnchor(self):
+        self.anchored = not self.anchored
 
     def _initFovMap(self):
         w, h = self.map.width, self.map.height
@@ -37,16 +75,34 @@ class Ship(Entity):
 
     def calculateFovMap(self):
         libtcod.map_compute_fov(
-            self.fovMap, self.x, self.y, self.viewRadius, True, libtcod.FOV_SHADOW
+            self.fovMap, self.mapX, self.mapY, self.viewRadius, True, libtcod.FOV_SHADOW
         )
         for _y in range(-self.viewRadius, self.viewRadius + 1):
             for _x in range(-self.viewRadius, self.viewRadius + 1):
                 if self.isPlayer:
-                    x = self.x + _x
-                    y = self.y + _y
+                    x = self.mapX + _x
+                    y = self.mapY + _y
                     c = self.map.getCell(x, y)
                     if c and self.inSight(x, y):
                         c.seen = True
 
     def inSight(self, x, y):
         return libtcod.map_is_in_fov(self.fovMap, x, y)
+
+    def sailAdjust(self, step):
+        newSails = max(min(self.sails + step, config.maxSails), 0)
+        if newSails != self.sails:
+            self.sails = newSails
+            self.speed = config.sailStep * self.sails * self.maxSpeed
+            print "new sails [{}]".format(self.sails)
+            print "new speed [{}]".format(self.speed)
+        else:
+            print "sails unchanged"
+    
+    def headingAdjust(self, val):
+        self.heading += val
+        if self.heading < 0:
+            self.heading += 360
+        elif self.heading >= 360:
+            self.heading -= 360
+        print 'New heading[{}]'.format(self.heading)

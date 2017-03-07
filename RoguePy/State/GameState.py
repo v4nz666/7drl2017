@@ -7,7 +7,7 @@ from TickHandler import TickHandler
 
 
 class GameState(object):
-  def __init__(self, name, manager = None):
+  def __init__(self, name, manager=None):
     self.name = name
     self.manager = manager
     self.inputHandler = Input.InputHandler()
@@ -28,7 +28,8 @@ class GameState(object):
   def removeView(self):
     if not len(self.__views) > 1 :
       raise IndexError("Tried to close last View on stack")
-    self.__views.pop()
+    return self.__views.pop()
+
 
   @property
   def name(self):

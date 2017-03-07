@@ -1,4 +1,5 @@
-from util import randfloat
+from util import randfloat, degToRad
+from math import sin, cos
 from Captain import Captain
 from City import City
 from RoguePy.Game import Map, Entity
@@ -24,15 +25,50 @@ class PlayState(GameState):
 
         self.windSpeed = 5.0
         self.windDir = 180.0
+        self.windEffectX = 0.0
+        self.windEffectY = 0.0
 
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
-        self.addHandler('windUpdate', 120, self.windUpdate)
-        self.disableHandler('windUpdate')
+        self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
+        self.addHandler('shipsUpdate', 1, self.shipsUpdate)
 
+        self.disableHandler('shipsUpdate')
 
     def beforeLoad(self):
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
+    def shipsUpdate(self):
+        self.playerUpdate()
+
+    def playerUpdate(self):
+        self.moveShip(self.player.ship)
+
+    def moveShip(self, ship):
+        if ship.anchored:
+            return
+        dx = config.spf * cos(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectX
+        dy = config.spf * sin(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectY
+
+        oldX = ship.mapX
+        oldY = ship.mapY
+        ship.x += dx
+        ship.y -= dy
+
+        if ship.mapX < 0:
+            ship.x = 0
+        elif ship.mapX >= self.map.width:
+            ship.x = self.map.width - 1
+        if ship.mapY < 0:
+            ship.y = 0
+        elif ship.mapY >= self.map.height:
+            ship.y = self.map.height - 1
+
+        if ship.mapX != oldX or ship.mapY != oldY:
+            self.map.removeEntity(ship, oldX, oldY)
+            self.map.addEntity(ship, ship.mapX, ship.mapY)
+            self.mapElement.setDirty(True)
+            ship.calculateFovMap()
 
     def fpsUpdate(self):
         fps = libtcod.sys_get_fps()
@@ -66,6 +102,27 @@ class PlayState(GameState):
         if self.windDir >= 360:
             self.windDir -= 360
         self.windDial.setVal(int(self.windDir))
+
+        self.windEffectX = config.spf * cos(self.windDir * degToRad) * self.windSpeed * config.wind['impact']
+        self.windEffectY = config.spf * sin(self.windDir * degToRad) * self.windSpeed * config.wind['impact']
+
+    def updateAnchorUI(self):
+        if self.player.ship.anchored:
+            self.anchorLabel.bgOpacity = 1.0
+            self.anchorLabel.setDefaultForeground(Colors.copper)
+            self.anchorLabel.enable()
+            self.infoPanel.setDirty(True)
+        else:
+            self.anchorLabel.bgOpacity = 0.0
+            self.anchorLabel.setDefaultForeground(Colors.dark_grey)
+            self.anchorLabel.disable()
+            self.infoPanel.setDirty(True)
+
+    def updateHeadingDial(self):
+        if not self.player.ship:
+            return
+        self.headingDial.setVal(self.player.ship.heading)
+        self.headingLabel.setLabel(str(self.player.ship.heading))
 
     def doIntro(self):
         majorCities = self.map.getMajorCities()
@@ -143,19 +200,21 @@ class PlayState(GameState):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
         self.infoPanel.addElement(Elements.Label(1, 1, "Heading")).setDefaultForeground(Colors.flame)
         self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2)).setDefaultForeground(Colors.brass)
-        self.headingLabel = self.infoPanel.addElement(Elements.Label(self.headingDial.x + 1,
+        self.headingLabel = self.infoPanel.addElement(Elements.Label(self.headingDial.x,
                                                                      self.headingDial.y + self.headingDial.height,
-                                                                     "312")).setDefaultForeground(Colors.brass)
+                                                                     "0.0   ")).setDefaultForeground(Colors.brass)
 
         self.infoPanel.addElement(Elements.Label(14, 1, "Wind")).setDefaultForeground(Colors.flame)
         self.windDial = self.infoPanel.addElement(Elements.Dial(14, 2)).setDefaultForeground(Colors.brass)
         self.windLabel = self.infoPanel.addElement(Elements.Label(self.windDial.x,
                                                                   self.windDial.y + self.windDial.height,
-                                                                  "0".zfill(5)))
+                                                                  "     "))
+        self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 3, "<ANCHOR>"))\
+            .setDefaultBackground(Colors.darker_red)
 
         self.infoPanel.addElement(Elements.Label(3, 9, "CAPTAIN")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 10, "Gold")).setDefaultForeground(Colors.gold)
-        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 10, "000000")). \
+        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 10, "      ")). \
             setDefaultForeground(Colors.gold)
         self.infoPanel.addElement(Elements.Label(1, 11, "Rep")).setDefaultForeground(Colors.darker_azure)
         self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 11, "000")). \
@@ -189,10 +248,10 @@ class PlayState(GameState):
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 23, "AMMO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 24, "Canon Ball")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 24, "Cannonball")).setDefaultForeground(Colors.darker_azure)
         self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 24, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 25, "Grape Shot")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 25, "Chainshot")).setDefaultForeground(Colors.darker_azure)
         self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
 
@@ -287,19 +346,84 @@ class PlayState(GameState):
               'key': Keys.Tab,
               'ch': None,
               'fn': self.openLogModal
-            }
+            },
+            'headingCCW': {
+                'key': Keys.NumPad4,
+                'ch': "a",
+                'fn': lambda:
+                    self.player.ship and
+                    self.headingAdjust(11.25)
+            },
+            'headingCCW2': {
+                'key': Keys.Left,
+                'ch': "A",
+                'fn': lambda:
+                    self.player.ship and
+                    self.headingAdjust(11.25)
+            },
+            'headingCW': {
+                'key': Keys.NumPad6,
+                'ch': "d",
+                'fn': lambda:
+                    self.player.ship and
+                    self.headingAdjust(-11.25)
+            },
+            'headingCW2': {
+                'key': Keys.Right,
+                'ch': "D",
+                'fn': lambda:
+                    self.player.ship and
+                    self.headingAdjust(-11.25)
+            },
+            'toggleAnchor': {
+                'key': Keys.Space,
+                'ch': None,
+                'fn': self.toggleAnchor
+
+            },
+            'sailsUp': {
+                'key': Keys.NumPad8,
+                'ch': "W",
+                'fn': lambda:
+                    self.player.ship and
+                    self.player.ship.sailAdjust(1)
+            },
+            'sailsUp2': {
+                'key': Keys.Up,
+                'ch': "W",
+                'fn': lambda:
+                    self.player.ship and
+                    self.player.ship.sailAdjust(1)
+            },
+            'sailsDn': {
+                'key': Keys.NumPad2,
+                'ch': "s",
+                'fn': lambda:
+                    self.player.ship and
+                    self.player.ship.sailAdjust(-1)
+            },
+            'sailsDn2': {
+                'key': Keys.Down,
+                'ch': "S",
+                'fn': lambda:
+                    self.player.ship and
+                    self.player.ship.sailAdjust(-1)
+            },
+
         })
 
         self.logModal.setKeyInputs({
             'hideModal': {
                 'key': Keys.Tab,
                 'ch': None,
-                'fn': self.removeView
+                'fn': lambda:
+                    self.removeView() and self.enableGameHandlers()
             },
             'hideModal2': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.removeView
+                'fn': lambda:
+                    self.removeView() and self.enableGameHandlers()
             },
             'showMap': {
                 'key': None,
@@ -312,6 +436,18 @@ class PlayState(GameState):
                 'fn': self.showNews
             },
         })
+
+    def toggleAnchor(self):
+
+        self.player.ship.toggleAnchor()
+        print "Anchor toggled[{}]".format(self.player.ship.anchored)
+        self.updateAnchorUI()
+
+    def headingAdjust(self, val):
+        if not self.player.ship:
+            return
+        self.player.ship.headingAdjust(val)
+        self.updateHeadingDial()
 
     def showMap(self):
         if self.logMap.visible:
@@ -330,7 +466,10 @@ class PlayState(GameState):
         self.logNews.show()
 
     def openLogModal(self):
+        self.disableHandler('shipsUpdate')
         self.addView(self.logModal)
+        self.mapX, self.mapY = self.player.ship.mapX, self.player.ship.mapY
+        self.logMap.center(self.mapX, self.mapY)
 
     def citySelected(self, index):
 
@@ -343,9 +482,6 @@ class PlayState(GameState):
 
         self.mapElement.center(startingCity.portX, startingCity.portY)
 
-        self.mapX = startingCity.portX
-        self.mapY = startingCity.portY
-        self.logMap.center(self.mapX, self.mapY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
         playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.lighter_grey, isPlayer=True)
@@ -355,8 +491,14 @@ class PlayState(GameState):
         self.player.gold = 700
         self.mapElement.setPlayer(self.player)
 
+        self.enableGameHandlers()
+
+    def enableGameHandlers(self):
         # Enable our gameplay handlers
         self.enableHandler('windUpdate')
+        self.enableHandler('shipsUpdate')
+
+        self.updateAnchorUI()
 
     def clearCityLabel(self):
         if self.cityLabel is not None:
@@ -375,7 +517,6 @@ class PlayState(GameState):
             self.mapY = newY
 
         self.logMap.center(self.mapX, self.mapY)
-
 
         cell = self.map.getCell(self.mapX, self.mapY)
         if cell and not cell.seen:
