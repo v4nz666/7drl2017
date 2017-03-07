@@ -23,7 +23,7 @@ class Animation(Element):
         self.onFinish()
         self.hide()
   
-  def getFrame(self):
+  def getFrame(self, frame):
     pass
   
   def onFinish(self):

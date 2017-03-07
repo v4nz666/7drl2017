@@ -138,6 +138,7 @@ class Cell:
         self.terrain = CellType.All[typeName]
         self.entity = None
         self.isPort = False
+        self.seen = False
         self.items = []
         pass
 

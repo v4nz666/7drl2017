@@ -31,7 +31,6 @@ class GenerateState(GameState):
             'Dominica',
             'Martinique',
             'Guadeloupe',
-            'Saint Domingue',
             'Santo Domingo',
             'Saba',
             'Saint Martin',
@@ -45,7 +44,6 @@ class GenerateState(GameState):
             'Virgin Gorda',
             'Anguilla',
             'Cap Francois',
-            'New Providence',
             'Trafalgar',
             'San Juan de Ulua',
             'Miskito',
@@ -310,9 +308,7 @@ class GenerateState(GameState):
 
     def validMap(self):
         self.testPoint = self.getOceanCorner()
-        print "TEST POINT", self.testPoint
         if self.testPoint is False:
-            print "Failed to find a test point"
             return False
 
         return True

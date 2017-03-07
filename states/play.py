@@ -1,5 +1,6 @@
 import util
 from Captain import Captain
+from City import City
 from RoguePy.Game import Map, Entity
 from RoguePy.UI import Elements
 from RoguePy.UI import Colors
@@ -24,6 +25,7 @@ class PlayState(GameState):
     def beforeLoad(self):
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
 
     def doIntro(self):
         majorCities = self.map.getMajorCities()
@@ -70,7 +72,19 @@ class PlayState(GameState):
         self.view.addElement(self.mapElement)
         self.setFocus(self.mapElement)
 
-        self.logMap = self.logFrame.addElement(Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
+        self.logMap = self.logFrame.addElement(
+            Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
+        self.mapOverlay = self.logMap.addElement(Elements.Element(0, 0, self.logMap.width, self.logMap.height))
+        self.mapOverlay.bgOpacity = 0
+        self.mapOverlay.draw = self.drawOverlay
+
+        self.cityLabel = None
+
+    def drawOverlay(self):
+        self.mapOverlay.setDirty(True)
+        cursorX, cursorY = self.logMap.onScreen(self.mapX, self.mapY)
+        libtcod.console_put_char_ex(
+            self.mapOverlay.console, cursorX, cursorY, '+', Colors.chartreuse, Colors.white)
 
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
@@ -226,12 +240,12 @@ class PlayState(GameState):
             'hideModal': {
                 'key': Keys.Tab,
                 'ch': None,
-                'fn': self.closeLogModal
+                'fn': self.removeView
             },
             'hideModal2': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.closeLogModal
+                'fn': self.removeView
             },
             'showMap': {
                 'key': None,
@@ -245,13 +259,16 @@ class PlayState(GameState):
             },
         })
 
+
     def showMap(self):
+        self.clearCityLabel()
         self.mapTab.enable()
         self.logMap.show()
         self.newsTab.disable()
         self.logNews.hide()
 
     def showNews(self):
+        self.clearCityLabel()
         self.mapTab.disable()
         self.logMap.hide()
         self.newsTab.enable()
@@ -259,9 +276,6 @@ class PlayState(GameState):
 
     def openLogModal(self):
         self.addView(self.logModal)
-
-    def closeLogModal(self):
-        self.removeView()
 
     def citySelected(self, index):
 
@@ -285,7 +299,15 @@ class PlayState(GameState):
         self.player.setShip(playerShip)
         self.player.gold = 700
 
+    def clearCityLabel(self):
+        if self.cityLabel is not None:
+            self.logMap.removeElement(self.cityLabel)
+            self.cityLabel = None
+
     def moveMap(self, dx, dy):
+
+        self.clearCityLabel()
+
         print "Move ", dx, dy
         newX = self.mapX + dx
         newY = self.mapY + dy
@@ -293,9 +315,36 @@ class PlayState(GameState):
             self.mapX = newX
         if 0 <= newY < self.map.height:
             self.mapY = newY
+
         self.logMap.center(self.mapX, self.mapY)
 
-    def quit(self):
+        cell = self.map.getCell(self.mapX, self.mapY)
+        try:
+            if isinstance(cell.entity, City):
+                city = cell.entity
+                cityLabelX = city.x - len(city.name) / 2
+                cityLabelY = city.y + 1
+
+                if cityLabelX < 0:
+                    cityLabelX = 0
+                if cityLabelX + len(city.name) >= self.map.width:
+                    cityLabelX = self.map.width - len(city.name)
+                if cityLabelY >= self.map.height - 1:
+                    cityLabelY = self.map.height - 3
+                cityLabelX, cityLabelY = self.logMap.onScreen(cityLabelX, cityLabelY)
+
+                self.cityLabel = self.logMap.addElement(Elements.Label(cityLabelX, cityLabelY, city.name))
+            else:
+                self.cityLabel = None
+
+        # TODO: Hack to deal with moving the cursor over the buggy section of the map
+        #   (See https://github.com/v4nz666/7drl2017/issues/19)
+        except AttributeError:
+            print 'failed at {},{}'.format(self.mapX, self.mapY)
+
+
+    @staticmethod
+    def quit():
         print "Quitting"
         sys.exit()
 
