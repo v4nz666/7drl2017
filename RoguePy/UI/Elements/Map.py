@@ -80,7 +80,7 @@ class Map(Element):
         y = sy + self._offsetY
         if (x >= 0 and x < self._map.width and y >= 0 and y < self._map.height):
           c = self._map.getCell(x, y)
-          if not c or not c.seen:
+          if not c:
               continue
           cv = self.cellToView(c)
           libtcod.console_put_char_ex(self.console, sx, sy, cv.char, cv.fg, cv.bg)
