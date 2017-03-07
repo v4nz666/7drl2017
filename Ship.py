@@ -94,15 +94,10 @@ class Ship(Entity):
         if newSails != self.sails:
             self.sails = newSails
             self.speed = config.sailStep * self.sails * self.maxSpeed
-            print "new sails [{}]".format(self.sails)
-            print "new speed [{}]".format(self.speed)
-        else:
-            print "sails unchanged"
-    
+
     def headingAdjust(self, val):
         self.heading += val
         if self.heading < 0:
             self.heading += 360
         elif self.heading >= 360:
             self.heading -= 360
-        print 'New heading[{}]'.format(self.heading)

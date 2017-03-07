@@ -46,7 +46,7 @@ class PlayState(GameState):
 
     def moveShip(self, ship):
         if ship.anchored:
-            return
+            return False
         dx = config.spf * cos(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectX
         dy = config.spf * sin(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectY
 
@@ -64,11 +64,30 @@ class PlayState(GameState):
         elif ship.mapY >= self.map.height:
             ship.y = self.map.height - 1
 
-        if ship.mapX != oldX or ship.mapY != oldY:
-            self.map.removeEntity(ship, oldX, oldY)
-            self.map.addEntity(ship, ship.mapX, ship.mapY)
-            self.mapElement.setDirty(True)
-            ship.calculateFovMap()
+        if ship.mapX == oldX and ship.mapY == oldY:
+            return False
+
+        destination = self.map.getCell(ship.mapX, ship.mapY)
+        if destination and destination.type is not 'water':
+            print "You're probably dead!"
+            ship.x = oldX
+            ship.y = oldY
+            return False
+
+        self.map.removeEntity(ship, oldX, oldY)
+        self.map.addEntity(ship, ship.mapX, ship.mapY)
+        self.mapElement.setDirty(True)
+        ship.calculateFovMap()
+        neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
+        for nx, ny in neighbours:
+            n = neighbours[nx, ny]
+            if isinstance(n.entity, City):
+                print "City! {},{}".format(nx, ny)
+                print "Ship  {},{}".format(ship.mapX, ship.mapY)
+
+        if ship.isPlayer:
+            self.mapElement.center(ship.mapX, ship.mapY)
+        return True
 
     def fpsUpdate(self):
         fps = libtcod.sys_get_fps()
