@@ -78,12 +78,15 @@ class PlayState(GameState):
         self.map = map
         self.mapElement = Elements.Map(0, 0, config.layout['uiWidth'] - self.infoPanel.width, config.layout['uiHeight'],
                                        self.map)
+        self.mapElement.showFog = True
+
         self.view.addElement(self.mapElement)
         self.setFocus(self.mapElement)
 
         self.logMap = self.logFrame.addElement(
             Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
         self.logMap.isStatic = True
+        self.logMap.showFog = True
         self.mapOverlay = self.logMap.addElement(Elements.Element(0, 0, self.logMap.width, self.logMap.height))
         self.mapOverlay.bgOpacity = 0
         self.mapOverlay.draw = self.drawOverlay
@@ -332,7 +335,7 @@ class PlayState(GameState):
 
 
         cell = self.map.getCell(self.mapX, self.mapY)
-        if not cell.seen:
+        if cell and not cell.seen:
             return
         try:
             if isinstance(cell.entity, City):

@@ -41,11 +41,12 @@ class Ship(Entity):
         )
         for _y in range(-self.viewRadius, self.viewRadius + 1):
             for _x in range(-self.viewRadius, self.viewRadius + 1):
-                x = self.x + _x
-                y = self.y + _y
-                c = self.map.getCell(x, y)
-                if c and self.inSight(x, y):
-                    c.seen = True
+                if self.isPlayer:
+                    x = self.x + _x
+                    y = self.y + _y
+                    c = self.map.getCell(x, y)
+                    if c and self.inSight(x, y):
+                        c.seen = True
 
     def inSight(self, x, y):
         return libtcod.map_is_in_fov(self.fovMap, x, y)

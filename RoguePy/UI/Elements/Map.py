@@ -18,6 +18,8 @@ class Map(Element):
     self.player = None
     self.isStatic = False
 
+    self.showFog = False
+
   def setPlayer(self, player):
       self.player = player
 
@@ -87,9 +89,9 @@ class Map(Element):
         y = sy + self._offsetY
         if (x >= 0 and x < self._map.width and y >= 0 and y < self._map.height):
           c = self._map.getCell(x, y)
-          if not c or not c.seen:
+          if not c or (not c.seen and self.showFog):
               continue
-          if self.isStatic or (self.player and self.player.inSight(x, y)):
+          if self.isStatic or (self.player and self.player.inSight(x, y)) or not self.showFog:
               cv = self.cellToView(c, True)
           else:
               cv = self.cellToView(c)
