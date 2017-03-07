@@ -25,6 +25,7 @@ class Label(Element):
 
     self._label = label
     self.setDirty()
+    return self
 
   def getLabel(self):
     return self._label

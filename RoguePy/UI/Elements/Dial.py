@@ -44,6 +44,7 @@ class Dial(Element):
         if faceIndex == len(self.faces[self.size]):
             faceIndex = 0
         self.face = self.faces[self.size][faceIndex]
+        self.setDirty(True)
 
     def getVal(self):
         return self.val
@@ -59,6 +60,14 @@ class Dial(Element):
     def draw(self):
         self.list.setItems(self.face)
         self.setDirty(False)
+
+    def setDefaultForeground(self, fg, cascade=True):
+        super(Dial, self).setDefaultForeground(fg, cascade)
+        return self
+
+    def setDefaultBackground(self, bg, cascade=True):
+        super(Dial, self).setDefaultBackground(bg, cascade)
+        return self
 
     def cacheFaces(self):
         self.faces = {

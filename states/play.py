@@ -1,4 +1,4 @@
-import util
+from util import randfloat
 from Captain import Captain
 from City import City
 from RoguePy.Game import Map, Entity
@@ -22,9 +22,50 @@ class PlayState(GameState):
         self.setupView()
         self.setupInputs()
 
+        self.windSpeed = 5.0
+        self.windDir = 180.0
+
+        self.addHandler('fpsUpdate', 60, self.fpsUpdate)
+        self.addHandler('windUpdate', 120, self.windUpdate)
+        self.disableHandler('windUpdate')
+
+
     def beforeLoad(self):
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
+    def fpsUpdate(self):
+        fps = libtcod.sys_get_fps()
+        self.fpsLabel.setLabel('{}FPS'.format(fps))
+
+    def windUpdate(self):
+
+        self.windSpeed += randfloat(config.wind['speedJitter'], -config.wind['speedJitter'])
+        maxSpd = config.wind['maxSpeed']
+        if self.windSpeed < 0:
+            self.windSpeed = 0
+        if self.windSpeed > maxSpd:
+            self.windSpeed = maxSpd
+
+        if self.windSpeed <= maxSpd * 0.33:
+            clr = Colors.green
+        elif self.windSpeed <= maxSpd * 0.5:
+            clr = Colors.dark_green
+        elif self.windSpeed <= maxSpd * 0.666:
+            clr = Colors.dark_yellow
+        elif self.windSpeed <= maxSpd * 0.85:
+            clr = Colors.dark_flame
+        else:
+            clr = Colors.red
+
+        self.windLabel.setLabel(str(round(self.windSpeed, 2))).setDefaultForeground(clr)
+
+        self.windDir += randfloat(config.wind['dirJitter'], -config.wind['dirJitter'])
+        if self.windDir < 0:
+            self.windDir += 360
+        if self.windDir >= 360:
+            self.windDir -= 360
+        self.windDial.setVal(int(self.windDir))
 
     def doIntro(self):
         majorCities = self.map.getMajorCities()
@@ -70,7 +111,6 @@ class PlayState(GameState):
         })
         self.removeHandler('intro')
 
-
     def leavePort(self, city):
         pass
 
@@ -101,17 +141,17 @@ class PlayState(GameState):
 
     def setupView(self):
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
-        self.infoPanel.addElement(Elements.Label(1, 1, "Heading"))
-        self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2))
+        self.infoPanel.addElement(Elements.Label(1, 1, "Heading")).setDefaultForeground(Colors.flame)
+        self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2)).setDefaultForeground(Colors.brass)
         self.headingLabel = self.infoPanel.addElement(Elements.Label(self.headingDial.x + 1,
                                                                      self.headingDial.y + self.headingDial.height,
-                                                                     "312"))
+                                                                     "312")).setDefaultForeground(Colors.brass)
 
-        self.infoPanel.addElement(Elements.Label(14, 1, "Wind"))
-        self.windDial = self.infoPanel.addElement(Elements.Dial(14, 2))
-        self.windLabel = self.infoPanel.addElement(Elements.Label(self.windDial.x + 1,
+        self.infoPanel.addElement(Elements.Label(14, 1, "Wind")).setDefaultForeground(Colors.flame)
+        self.windDial = self.infoPanel.addElement(Elements.Dial(14, 2)).setDefaultForeground(Colors.brass)
+        self.windLabel = self.infoPanel.addElement(Elements.Label(self.windDial.x,
                                                                   self.windDial.y + self.windDial.height,
-                                                                  "091"))
+                                                                  "0".zfill(5)))
 
         self.infoPanel.addElement(Elements.Label(3, 9, "CAPTAIN")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 10, "Gold")).setDefaultForeground(Colors.gold)
@@ -185,6 +225,7 @@ class PlayState(GameState):
         self.helpPanel.addElement(Elements.Label(7, 4, "Cptn's Log")).setDefaultForeground(Colors.azure)
         self.helpPanel.addElement(Elements.Label(1, 6, "SPC")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 6, "Anchor Up/Dn")).setDefaultForeground(Colors.azure)
+        self.fpsLabel = self.helpPanel.addElement(Elements.Label(2, self.helpPanel.height - 2, "000fps"))
 
         halfX = self.view.width / 2
         halfY = self.view.height / 2
@@ -307,12 +348,15 @@ class PlayState(GameState):
         self.logMap.center(self.mapX, self.mapY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
-        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.magenta, isPlayer=True)
+        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.lighter_grey, isPlayer=True)
         # TODO Let the player pick from a few randomly generated captains
         self.player = Captain()
         self.player.setShip(playerShip)
         self.player.gold = 700
         self.mapElement.setPlayer(self.player)
+
+        # Enable our gameplay handlers
+        self.enableHandler('windUpdate')
 
     def clearCityLabel(self):
         if self.cityLabel is not None:
@@ -323,7 +367,6 @@ class PlayState(GameState):
 
         self.clearCityLabel()
 
-        print "Move ", dx, dy
         newX = self.mapX + dx
         newY = self.mapY + dy
         if 0 <= newX < self.map.width:
