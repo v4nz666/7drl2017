@@ -128,7 +128,7 @@ class PlayState(GameState):
     def updateAnchorUI(self):
         if self.player.ship.anchored:
             self.anchorLabel.bgOpacity = 1.0
-            self.anchorLabel.setDefaultForeground(Colors.copper)
+            self.anchorLabel.setDefaultForeground(Colors.brass)
             self.anchorLabel.enable()
             self.infoPanel.setDirty(True)
         else:
@@ -142,6 +142,18 @@ class PlayState(GameState):
             return
         self.headingDial.setVal(self.player.ship.heading)
         self.headingLabel.setLabel(str(self.player.ship.heading))
+
+    def enterCity(self, player, city):
+        print "Entering {}".format(city.name)
+        # self.cityModal.show()
+
+
+
+
+        pass
+
+    def encounterShip(self, captain):
+        pass
 
     def doIntro(self):
         majorCities = self.map.getMajorCities()
@@ -209,6 +221,9 @@ class PlayState(GameState):
 
         self.cityLabel = None
 
+        self.map.on('enterCity', self.enterCity)
+        self.map.on('encounterShip', self.encounterShip)
+
     def drawOverlay(self):
         self.mapOverlay.setDirty(True)
         cursorX, cursorY = self.logMap.onScreen(self.mapX, self.mapY)
@@ -221,76 +236,80 @@ class PlayState(GameState):
         self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2)).setDefaultForeground(Colors.brass)
         self.headingLabel = self.infoPanel.addElement(Elements.Label(self.headingDial.x,
                                                                      self.headingDial.y + self.headingDial.height,
-                                                                     "0.0   ")).setDefaultForeground(Colors.brass)
+                                                                     "0.0   ")).setDefaultForeground(Colors.gold)
 
         self.infoPanel.addElement(Elements.Label(14, 1, "Wind")).setDefaultForeground(Colors.flame)
         self.windDial = self.infoPanel.addElement(Elements.Dial(14, 2)).setDefaultForeground(Colors.brass)
         self.windLabel = self.infoPanel.addElement(Elements.Label(self.windDial.x,
                                                                   self.windDial.y + self.windDial.height,
                                                                   "     "))
-        self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 3, "<ANCHOR>"))\
+        self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 6, "<ANCHOR>"))\
             .setDefaultBackground(Colors.darker_red)
 
-        self.infoPanel.addElement(Elements.Label(3, 9, "CAPTAIN")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 10, "Gold")).setDefaultForeground(Colors.gold)
-        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 10, "      ")). \
+        self.infoPanel.addElement(Elements.Label(7, 8, "<SAIL>")).setDefaultForeground(Colors.brass)
+        self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 9, 12, 0, config.maxSails)).\
+            setDefaultForeground(Colors.brass)
+
+        self.infoPanel.addElement(Elements.Label(3, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(1, 11, "Gold")).setDefaultForeground(Colors.gold)
+        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 11, "      ")). \
             setDefaultForeground(Colors.gold)
-        self.infoPanel.addElement(Elements.Label(1, 11, "Rep")).setDefaultForeground(Colors.darker_azure)
-        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 11, "000")). \
+        self.infoPanel.addElement(Elements.Label(1, 12, "Rep")).setDefaultForeground(Colors.lighter_azure)
+        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 12, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 12, "Skills")).setDefaultForeground(Colors.darker_flame)
-        self.infoPanel.addElement(Elements.Label(1, 13, "Nav")).setDefaultForeground(Colors.darker_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 13, "0".zfill(3))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 14, "Gun")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(3, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(1, 14, "Nav")).setDefaultForeground(Colors.lighter_azure)
         self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 15, "Char")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 15, "Gun")).setDefaultForeground(Colors.lighter_azure)
         self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
-
-        self.infoPanel.addElement(Elements.Label(3, 17, "SHIP")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 18, "Crew(max)")).setDefaultForeground(Colors.darker_azure)
-        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 18, "000")).\
-            setDefaultForeground(Colors.azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 18, "({})".format(100))).\
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 19, "Morale")).setDefaultForeground(Colors.darker_azure)
-        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 19, "0".zfill(3))).\
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 20, "Hull Dmg")).setDefaultForeground(Colors.darker_azure)
-        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "0".zfill(3))).\
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 21, "Sail Dmg")).setDefaultForeground(Colors.darker_azure)
-        self.SailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "0".zfill(3))).\
+        self.infoPanel.addElement(Elements.Label(1, 16, "Char")).setDefaultForeground(Colors.lighter_azure)
+        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 23, "AMMO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 24, "Cannonball")).setDefaultForeground(Colors.darker_azure)
-        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 24, "0".zfill(3))). \
+        self.infoPanel.addElement(Elements.Label(3, 18, "SHIP")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
+        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "000")).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 25, "Chainshot")).setDefaultForeground(Colors.darker_azure)
-        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "0".zfill(3))). \
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 19, "({})".format(100))).\
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
+        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "0".zfill(3))).\
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 21, "Hull Dmg")).setDefaultForeground(Colors.lighter_azure)
+        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "0".zfill(3))).\
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 22, "Sail Dmg")).setDefaultForeground(Colors.lighter_azure)
+        self.SailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "0".zfill(3))).\
+            setDefaultForeground(Colors.azure)
+
+        self.infoPanel.addElement(Elements.Label(3, 24, "AMMO")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
+        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "0".zfill(3))). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 26, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
+        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 28, "CARGO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 29, "Food")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 29, "Food")).setDefaultForeground(Colors.lighter_azure)
         self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 29, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 30, "Rum")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 30, "Rum")).setDefaultForeground(Colors.lighter_azure)
         self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 30, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 31, "Wood")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 31, "Wood")).setDefaultForeground(Colors.lighter_azure)
         self.woodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 32, "Cloth")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 32, "Cloth")).setDefaultForeground(Colors.lighter_azure)
         self.clothCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))).\
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 33, "Coffee")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 33, "Coffee")).setDefaultForeground(Colors.lighter_azure)
         self.coffeeCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 33, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 34, "Spice")).setDefaultForeground(Colors.darker_azure)
+        self.infoPanel.addElement(Elements.Label(1, 34, "Spice")).setDefaultForeground(Colors.lighter_azure)
         self.spiceCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 34, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
 
@@ -405,28 +424,29 @@ class PlayState(GameState):
                 'ch': "W",
                 'fn': lambda:
                     self.player.ship and
-                    self.player.ship.sailAdjust(1)
+                    self.adjustSails(1)
+                    
             },
             'sailsUp2': {
                 'key': Keys.Up,
                 'ch': "W",
                 'fn': lambda:
                     self.player.ship and
-                    self.player.ship.sailAdjust(1)
+                    self.adjustSails(1)
             },
             'sailsDn': {
                 'key': Keys.NumPad2,
                 'ch': "s",
                 'fn': lambda:
                     self.player.ship and
-                    self.player.ship.sailAdjust(-1)
+                    self.adjustSails(-1)
             },
             'sailsDn2': {
                 'key': Keys.Down,
                 'ch': "S",
                 'fn': lambda:
                     self.player.ship and
-                    self.player.ship.sailAdjust(-1)
+                    self.adjustSails(-1)
             },
 
         })
@@ -455,6 +475,11 @@ class PlayState(GameState):
                 'fn': self.showNews
             },
         })
+
+    def adjustSails(self, val):
+        self.player.ship.sailAdjust(val)
+        self.sailSlider.val = self.player.ship.sails
+
 
     def toggleAnchor(self):
 
@@ -511,6 +536,7 @@ class PlayState(GameState):
         self.mapElement.setPlayer(self.player)
 
         self.enableGameHandlers()
+        self.map.trigger('enterCity', self.player, startingCity)
 
     def enableGameHandlers(self):
         # Enable our gameplay handlers
