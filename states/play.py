@@ -20,6 +20,44 @@ __author__ = 'jripley'
 
 class PlayState(GameState):
     def init(self):
+        self.availableShips = [
+            {'Caravel': lambda: None},
+            {'Caravel': lambda: None},
+            {'Brig': lambda: None},
+            {'Caravel': lambda: None},
+            {'Galleon': lambda: None},
+            {'Caravel': lambda: None},
+            {'Ship o\'Line': lambda: None},
+            {'Frigate': lambda: None},
+            {'Caravel': lambda: None},
+            {'Caravel': lambda: None},
+            {'Caravel': lambda: None},
+            {'Ship o\'Line': lambda: None},
+            {'Frigate': lambda: None},
+            {'Sloop': lambda: None},
+            {'Schooner': lambda: None}
+        ]
+        from shipTypes import shipTypes
+        self.availableShipSpecs = [
+            shipTypes['Caravel'],
+            shipTypes['Caravel'],
+            shipTypes['Brig'],
+            shipTypes['Caravel'],
+            shipTypes['Galleon'],
+            shipTypes['Caravel'],
+            shipTypes['Ship o\'Line'],
+            shipTypes['Frigate'],
+            shipTypes['Caravel'],
+            shipTypes['Caravel'],
+            shipTypes['Caravel'],
+            shipTypes['Ship o\'Line'],
+            shipTypes['Frigate'],
+            shipTypes['Sloop'],
+            shipTypes['Schooner'],
+        ]
+
+        self.currentCity = None
+
         self.setupView()
         self.setupInputs()
 
@@ -35,8 +73,9 @@ class PlayState(GameState):
         self.disableHandler('shipsUpdate')
 
     def beforeLoad(self):
+        self.manager.updateUi(self)
         self.addView(self.introModal)
-        self.addHandler('intro', 1, self.doIntro)
+        self.addHandler('intro', 60, self.doIntro)
 
     def shipsUpdate(self):
         self.playerUpdate()
@@ -143,14 +182,103 @@ class PlayState(GameState):
         self.headingDial.setVal(self.player.ship.heading)
         self.headingLabel.setLabel(str(self.player.ship.heading))
 
-    def enterCity(self, player, city):
-        print "Entering {}".format(city.name)
-        # self.cityModal.show()
+    def enterCity(self, captain, city):
+
+        self.map.removeEntity(captain.ship, captain.ship.mapX, captain.ship.mapY)
+
+        self.currentCity = city
+        self.addView(self.cityModal)
+
+        city.setPrices()
+        self.hideShops()
+        self.disableShops()
+        self.cityShowShop('generalStore')
+        self.updateCityUI()
+        print 'PORT {},{}'.format(city.portX, city.portY)
+
+    def castOff(self, ship):
+        self.removeView()
+        ship.anchored = True
+        ship.heading = 0.0
+        ship.sails = 0
+        x, y = self.currentCity.portX, self.currentCity.portY
+        ship.x = x
+        ship.y = y
+        print "Casting off to {},{}".format(x, y)
+        self.map.addEntity(ship, x, y)
+        self.currentCity = None
+
+
+    def hideShops(self):
+        for shop in config.city['possibleShops']:
+            elementName = "{}Frame".format(shop)
+            element = getattr(self, elementName)
+            if shop not in self.currentCity.shops:
+                element.hide()
+            else:
+                element.show()
+
+    def disableShops(self):
+        self.generalStoreFrame.disable()
+        self.tavernFrame.disable()
+        self.shipyardFrame.disable()
+
+    def updateCityUI(self):
+        city = self.currentCity
+        self.cityFrame.setTitle('Welcome to {}!'.format(city.name))
+        self.updateStoreItems()
+        self.updateBrothelValues()
+        self.updateTavernUI()
 
 
 
+    def updateBrothelValues(self):
+        c = self.currentCity
+        self.brothelRateVal.setLabel(str(c.brothelRate))
+        self.brothelCrewVal.setLabel(str(self.player.ship.crew))
+        self.brothelCost = c.brothelRate * (self.player.ship.crew + 1)
+        self.brothelCostVal.setLabel(str(self.brothelCost))
+        self.brothelGoldVal.setLabel(str(self.player.gold))
+        self.brothelMoraleVal.setLabel(str(self.player.morale))
 
-        pass
+    def updateStoreItems(self):
+        
+        cityGoods = self.currentCity.getGoods()
+        self.storeTownGold.setLabel(str(cityGoods['gold']).zfill(5))
+        self.storeTownFood.setLabel(str(cityGoods['food']).zfill(4))
+        self.storeTownRum.setLabel(str(cityGoods['rum']).zfill(3))
+        self.storeTownWood.setLabel(str(cityGoods['wood']).zfill(3))
+        self.storeTownCloth.setLabel(str(cityGoods['cloth']).zfill(3))
+        self.storeTownCoffee.setLabel(str(cityGoods['coffee']).zfill(3))
+        self.storeTownSpice.setLabel(str(cityGoods['spice']).zfill(3))
+        
+        shipGoods = self.player.ship.goods
+        self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
+        self.storeShipFood.setLabel(str(shipGoods['food']).zfill(4))
+        self.storeShipRum.setLabel(str(shipGoods['rum']).zfill(3))
+        self.storeShipWood.setLabel(str(shipGoods['wood']).zfill(3))
+        self.storeShipCloth.setLabel(str(shipGoods['cloth']).zfill(3))
+        self.storeShipCoffee.setLabel(str(shipGoods['coffee']).zfill(3))
+        self.storeShipSpice.setLabel(str(shipGoods['spice']).zfill(3))
+
+        self.updateBuySellPrices()
+
+    def updateBuySellPrices(self):
+        selectedItem = [
+            'food',
+            'rum',
+            'wood',
+            'cloth',
+            'coffee',
+            'spice'
+        ][self.storeMenu.selected]
+
+        buy, sell = self.currentCity.getPrice(selectedItem)
+
+        self.buyPrice.setLabel(str(buy))
+        self.sellPrice.setLabel(str(sell))
+
+
 
     def encounterShip(self, captain):
         pass
@@ -243,11 +371,11 @@ class PlayState(GameState):
         self.windLabel = self.infoPanel.addElement(Elements.Label(self.windDial.x,
                                                                   self.windDial.y + self.windDial.height,
                                                                   "     "))
-        self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 6, "<ANCHOR>"))\
+        self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 6, "<ANCHOR>")) \
             .setDefaultBackground(Colors.darker_red)
 
         self.infoPanel.addElement(Elements.Label(7, 8, "<SAIL>")).setDefaultForeground(Colors.brass)
-        self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 9, 12, 0, config.maxSails)).\
+        self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 9, 12, 0, config.maxSails)). \
             setDefaultForeground(Colors.brass)
 
         self.infoPanel.addElement(Elements.Label(3, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
@@ -271,18 +399,18 @@ class PlayState(GameState):
 
         self.infoPanel.addElement(Elements.Label(3, 18, "SHIP")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
-        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "000")).\
+        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "000")). \
             setDefaultForeground(Colors.azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 19, "({})".format(100))).\
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 19, "({})".format(100))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
-        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "0".zfill(3))).\
+        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 21, "Hull Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "0".zfill(3))).\
+        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 22, "Sail Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.SailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "0".zfill(3))).\
+        self.SailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "0".zfill(3))). \
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 24, "AMMO")).setDefaultForeground(Colors.flame)
@@ -295,16 +423,16 @@ class PlayState(GameState):
 
         self.infoPanel.addElement(Elements.Label(3, 28, "CARGO")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 29, "Food")).setDefaultForeground(Colors.lighter_azure)
-        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 29, "0".zfill(5))).\
+        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 29, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 30, "Rum")).setDefaultForeground(Colors.lighter_azure)
-        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 30, "0".zfill(5))).\
+        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 30, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 31, "Wood")).setDefaultForeground(Colors.lighter_azure)
-        self.woodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))).\
+        self.woodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 32, "Cloth")).setDefaultForeground(Colors.lighter_azure)
-        self.clothCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))).\
+        self.clothCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 33, "Coffee")).setDefaultForeground(Colors.lighter_azure)
         self.coffeeCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 33, "0".zfill(5))). \
@@ -349,7 +477,223 @@ class PlayState(GameState):
         # logMap set in setMap
         self.logNews = frame.addElement(Elements.List(1, 1, frame.width - 2, frame.height - 2)).hide()
 
-        #### Intro modal
+
+        #### City Modal
+        self.cityModal = View(modalW + 2, modalH + 2, modalX + 1, modalY - 1)
+        self.cityFrame = self.cityModal.addElement(Elements.Frame(0, 0, modalW + 2, modalH + 2, "Welcome!"))
+        self.generalStoreFrame = self.cityModal.addElement(Elements.Frame(1, 1, 28, 16, 'GE(N)ERAL STORE'))
+        self.tavernFrame = self.cityModal.addElement(Elements.Frame(1, 17, 28, 11, '(T)AVERN'))
+        self.dockFrame = self.cityModal.addElement(Elements.Frame(1, 28, 14, 10, '(D)OCK'))
+        self.gossipFrame = self.cityModal.addElement(Elements.Frame(15, 28, 14, 10, '(G)OSSIP'))
+        self.shipyardFrame = self.cityModal.addElement(Elements.Frame(29, 1, 29, 27, 'SHIP (Y)ARD'))
+        self.brothelFrame = self.cityModal.addElement(Elements.Frame(29, 28, 29, 10, '(B)ROTHEL'))
+
+        ### General Store
+        self.generalStoreFrame.addElement(Elements.Label(2, 1, "on ship"))
+        self.generalStoreFrame.addElement(Elements.Label(19, 1, "in town"))
+        self.storeShipGold = self.generalStoreFrame.addElement(
+            Elements.Label(1, 2, "12345"))
+        self.storeShipFood = self.generalStoreFrame.addElement(
+            Elements.Label(1, 3, "1234"))
+        self.storeShipRum = self.generalStoreFrame.addElement(
+            Elements.Label(1, 4, "123"))
+        self.storeShipWood = self.generalStoreFrame.addElement(
+            Elements.Label(1, 5, "123"))
+        self.storeShipCloth = self.generalStoreFrame.addElement(
+            Elements.Label(1, 6, "123"))
+        self.storeShipCoffee = self.generalStoreFrame.addElement(
+            Elements.Label(1, 7, "123"))
+        self.storeShipSpice = self.generalStoreFrame.addElement(
+            Elements.Label(1, 8, "123"))
+
+        self.storeTownGold = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 6, 2, "12345"))
+        self.storeTownFood = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 5, 3, "1234"))
+        self.storeTownRum = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 4, 4, "123"))
+        self.storeTownWood = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 4, 5, "123"))
+        self.storeTownCloth = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 4, 6, "123"))
+        self.storeTownCoffee = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 4, 7, "123"))
+        self.storeTownSpice = self.generalStoreFrame.addElement(
+            Elements.Label(self.generalStoreFrame.width - 4, 8, "123"))
+
+        menuItems = [
+            {'Food': lambda: None},
+            {'Rum': lambda: None},
+            {'Wood': lambda: None},
+            {'Cloth': lambda: None},
+            {'Coffee': lambda: None},
+            {'Spice': lambda: None},
+        ]
+
+        self.storeMenu = self.generalStoreFrame.addElement(
+            Elements.Menu(11, 3, 6, 6, menuItems))
+        self.storeGoldLabel = self.generalStoreFrame.addElement(Elements.Label(11, 2, "Gold"))
+        self.buyPriceFrame = self.generalStoreFrame.addElement(Elements.Frame(1, 9, 7, 3, "Buy"))
+        buyDollar = self.buyPriceFrame.addElement(Elements.Label(1, 1, "$"))
+        self.buyPrice = self.buyPriceFrame.addElement(Elements.Label(2, 1, "1000"))
+        self.holdFrame = self.generalStoreFrame.addElement(Elements.Frame(8, 9, 11, 3, "Hold/max"))
+        self.inHoldVal = self.holdFrame.addElement(Elements.Label(1, 1, "750"))
+        self.holdFrame.addElement(Elements.Label(5, 1, '/'))
+        self.inHoldTotal = self.holdFrame.addElement(Elements.Label(7, 1, "750"))
+
+        self.sellPriceFrame = self.generalStoreFrame.addElement(Elements.Frame(19, 9, 7, 3, "Sell"))
+        sellDollar = self.sellPriceFrame.addElement(Elements.Label(1, 1, "$"))
+        self.sellPrice = self.sellPriceFrame.addElement(Elements.Label(2, 1, "1000"))
+
+        salesFinal = self.generalStoreFrame.addElement(Elements.Label(6, 12, "All sales final!"))
+        storeUpDnHelp = self.generalStoreFrame.addElement(Elements.Label(5, 13, "Up/Dn-Select Goods"))
+        storeBuySellHelp = self.generalStoreFrame.addElement(Elements.Label(6, 14, "Lft/Rgt-Buy/Sell"))
+
+        ### Shipyard
+        # Repairs
+        self.repairFrame = self.shipyardFrame.addElement(Elements.Frame(1, 1, 14, 8, 'REPAIRS'))
+        self.repairHullLabel = self.repairFrame.addElement(Elements.Label(1, 2, "(H)ULL"))
+        self.notEnoughWood = self.repairFrame.addElement(Elements.Label(8, 2, "wood"))
+        self.repairHullTotal = self.repairFrame.addElement(Elements.Label(7, 3, "/ 100"))
+        self.repairHullCurrent = self.repairFrame.addElement(Elements.Label(2, 3, "25"))
+        self.repairSailLabel = self.repairFrame.addElement(Elements.Label(1, 4, "(S)AIL"))
+        self.notEnoughCloth = self.repairFrame.addElement(Elements.Label(8, 4, "cloth"))
+        self.repairSailTotal = self.repairFrame.addElement(Elements.Label(7, 5, "/ 100"))
+        self.repairSailCurrent = self.repairFrame.addElement(Elements.Label(2, 5, "80"))
+        # Ammo
+        self.ammoFrame = self.shipyardFrame.addElement(Elements.Frame(14, 1, 14, 8, 'AMMO'))
+        self.ammoPriceLabel = self.ammoFrame.addElement(Elements.Label(3, 6, "$20/10"))
+        self.cannonballLabel = self.ammoFrame.addElement(Elements.Label(1, 2, "Ca(n)nonball"))
+        self.cbOnShipLabel = self.ammoFrame.addElement(Elements.Label(1, 3, "on ship"))
+        self.cannonballOnShip = self.ammoFrame.addElement(Elements.Label(8, 3, "!   !"))
+        self.chainshotLabel = self.ammoFrame.addElement(Elements.Label(1, 4, "C(h)ainshot"))
+        self.csOnShipLabel = self.ammoFrame.addElement(Elements.Label(1, 5, "on ship"))
+        self.chainshotOnShip = self.ammoFrame.addElement(Elements.Label(8, 5, "!   !"))
+        # Ship sales
+        self.shipSaleFrame = self.shipyardFrame.addElement(Elements.Frame(1, 9, 27, 17, 'SHIPS for SALE'))
+        self.shipSaleHelp = self.shipSaleFrame.addElement(Elements.Label(1, self.shipSaleFrame.height - 1,
+                                                                         "Up/Dn-Select | Enter buys"))
+        self.shipList = self.shipSaleFrame.addElement(Elements.Menu(1, 2, 12, 13, self.availableShips))
+        self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 2, 13, 13, "Ship Specs"))
+        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 2, 11, 8)) \
+            .setItems(self.availableShipSpecs[1])
+        self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 9, "Damage"))
+        self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 10, 11, 2)).setItems({
+            'hull': 85,
+            'sail': 12
+        })
+
+        ### Brothel
+        brothelText = "Treat the crew to a wild night. Expensive, but great for morale!"
+        self.brothelText = self.brothelFrame.addElement(Elements.Text(3, 1, self.brothelFrame.width - 4, 3, brothelText))
+        self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Rate"))
+        self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 4, "20"))
+        self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Crew"))
+        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 5, "120"))
+        self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Cost"))
+        self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 6, "24000"))
+        self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Gold"))
+        self.brothelGoldVal = self.brothelFrame.addElement(Elements.Label(17, 7, "2553"))
+        self.brothelMoraleLabel = self.brothelFrame.addElement(Elements.Label(7, 8, "Morale"))
+        self.brothelMoraleVal = self.brothelFrame.addElement(Elements.Label(17, 8, "100"))
+
+        ### Tavern
+        tavernText = "You are greeted by a toothless bartender"
+        self.tavernText = self.tavernFrame.addElement(Elements.Text(1, 1, 15, 3, tavernText))
+        tavernQuote = '"Wha d\'ya want?'
+        self.tavernQuote = self.tavernFrame.addElement(Elements.Label(1, 5, tavernQuote))
+        self.buyARoundLabel = self.tavernFrame.addElement(Elements.Label(1, 7, "Buy a (R)ound"))
+        self.hireCrewLabel = self.tavernFrame.addElement(Elements.Label(1, 8, "(H)ire Sailors"))
+        tavernOnShipLabel = self.tavernFrame.addElement(Elements.Label(18, 2, "on ship"))
+
+
+
+        self.tavernStats = self.tavernFrame.addElement(Elements.Dict(16, 3, 11, 5))
+
+        ### Dock
+        dockText = "Set sail for the open sea. Make sure you have enough food and rum for the journey!"
+        self.dockText = self.dockFrame.addElement(
+            Elements.Text(1, 1, self.dockFrame.width - 2, self.dockFrame.height - 2, dockText))
+
+        ### Gossip
+        gossipText = "Learn about profitable goods and pirates in the area."
+        self.gossipText = self.gossipFrame.addElement(Elements.Text(1, 2, self.gossipFrame.width - 2, 7, gossipText))
+        self.gossipRepLabel = self.gossipFrame.addElement(Elements.Label(1, 8, "Rep: "))
+        self.gossipRepVal = self.gossipFrame.addElement(Elements.Label(11, 8, "55"))
+
+        # City colors
+        self.cityModal.setDefaultColors(Colors.sepia, Colors.darkest_sepia, True)
+        self.cityModal.bgOpacity = 0.4
+
+        self.generalStoreFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.tavernFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.brothelFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.shipyardFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.gossipFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.dockFrame.setDefaultForeground(Colors.lightest_sepia)
+
+        # Store colors
+        self.storeShipGold.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipFood.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipRum.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipWood.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipCloth.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipCoffee.setDefaultForeground(Colors.lighter_sepia)
+        self.storeShipSpice.setDefaultForeground(Colors.lighter_sepia)
+        self.storeGoldLabel.setDefaultForeground(Colors.gold)
+        self.storeTownGold.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownFood.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownRum.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownWood.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownCloth.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownCoffee.setDefaultForeground(Colors.lighter_sepia)
+        self.storeTownSpice.setDefaultForeground(Colors.lighter_sepia)
+
+        buyDollar.setDefaultForeground(Colors.gold)
+        sellDollar.setDefaultForeground(Colors.gold)
+        salesFinal.setDefaultForeground(Colors.darker_red)
+
+
+        # Shipyard colors
+        self.shipSpecFrame.setDefaultForeground(Colors.lighter_sepia, True)
+        self.shipSaleHelp.setDefaultForeground(Colors.dark_sepia)
+        self.shipList.setDefaultForeground(Colors.lighter_sepia)
+        self.damageLabel.setDefaultForeground(Colors.darker_red)
+        self.damageSpecs.setDefaultForeground(Colors.red)
+
+        self.repairHullTotal.setDefaultForeground(Colors.lighter_sepia)
+        self.repairSailTotal.setDefaultForeground(Colors.lighter_sepia)
+        self.repairHullCurrent.setDefaultForeground(Colors.darker_green)
+        self.repairSailCurrent.setDefaultForeground(Colors.dark_red)
+        self.notEnoughWood.setDefaultForeground(Colors.darker_red)
+        self.notEnoughCloth.setDefaultForeground(Colors.darker_green)
+
+        self.ammoPriceLabel.setDefaultForeground(Colors.gold)
+        self.cannonballLabel.setDefaultForeground(Colors.lighter_sepia)
+        self.chainshotLabel.setDefaultForeground(Colors.lighter_sepia)
+        self.cbOnShipLabel.setDefaultForeground(Colors.dark_sepia)
+        self.csOnShipLabel.setDefaultForeground(Colors.dark_sepia)
+        self.cannonballOnShip.setDefaultForeground(Colors.brass)
+        self.chainshotOnShip.setDefaultForeground(Colors.brass)
+
+        # Tavern Colors
+        self.buyARoundLabel.setDefaultForeground(Colors.lighter_sepia)
+        self.hireCrewLabel.setDefaultForeground(Colors.lighter_sepia)
+        self.tavernStats.setDefaultForeground(Colors.lighter_sepia)
+
+        # Brothel colors
+        self.brothelText.setDefaultForeground(Colors.lighter_sepia)
+        self.brothelRateVal.setDefaultForeground(Colors.gold)
+        self.brothelCostVal.setDefaultForeground(Colors.gold)
+        self.brothelGoldVal.setDefaultForeground(Colors.gold)
+
+        #Gossip colors
+        self.gossipText.setDefaultForeground(Colors.lighter_sepia)
+        self.gossipRepVal.setDefaultForeground(Colors.lighter_sepia)
+
+        # Dock colors
+        self.dockText.setDefaultForeground(Colors.lighter_sepia)
+        ## Intro modal
         modalX = halfX / 2 - 1
         modalY = halfY / 2
         modalW = halfX
@@ -357,20 +701,22 @@ class PlayState(GameState):
 
         self.introModal = View(modalW, modalH, modalX, modalY)
         self.introModal.addElement(Elements.Frame(0, 0, modalW, modalH, "Welcome!"))
-        introText =\
-            "  Welcome to Rogue Basin. Home of great opportunity for a young captain like yourself. " +\
-            "There has been a drastic increase in Pirate activity of late, and as such, the King " +\
-            "has been handing out Letters of Marque to just about anyone who's willing to help rid " +\
-            "the seas of the Pirate threat.\n\n" +\
-            "  Never one to miss out on a chance for new adventures, you snatch up the chance, gather " +\
+        introText = \
+            "  Welcome to Rogue Basin. Home of great opportunity for a young captain like yourself. " + \
+            "There has been a drastic increase in Pirate activity of late, and as such, the King " + \
+            "has been handing out Letters of Marque to just about anyone who's willing to help rid " + \
+            "the seas of the Pirate threat.\n\n" + \
+            "  Never one to miss out on a chance for new adventures, you snatch up the chance, gather " + \
             "your life savings and head to the big city to find a ship."
         self.introModal.addElement(Elements.Text(1, 2, modalW - 2, 15, introText)). \
             setDefaultForeground(Colors.dark_green)
 
-        pickACity =\
+        pickACity = \
             "Please choose your starting Port"
+
         self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
             setDefaultForeground(Colors.dark_red)
+
 
     def setupInputs(self):
         # Inputs. =================================================================================
@@ -381,37 +727,37 @@ class PlayState(GameState):
                 'fn': self.quit
             },
             'showLogModal': {
-              'key': Keys.Tab,
-              'ch': None,
-              'fn': self.openLogModal
+                'key': Keys.Tab,
+                'ch': None,
+                'fn': self.openLogModal
             },
             'headingCCW': {
                 'key': Keys.NumPad4,
                 'ch': "a",
                 'fn': lambda:
-                    self.player.ship and
-                    self.headingAdjust(11.25)
+                self.player.ship and
+                self.headingAdjust(11.25)
             },
             'headingCCW2': {
                 'key': Keys.Left,
                 'ch': "A",
                 'fn': lambda:
-                    self.player.ship and
-                    self.headingAdjust(11.25)
+                self.player.ship and
+                self.headingAdjust(11.25)
             },
             'headingCW': {
                 'key': Keys.NumPad6,
                 'ch': "d",
                 'fn': lambda:
-                    self.player.ship and
-                    self.headingAdjust(-11.25)
+                self.player.ship and
+                self.headingAdjust(-11.25)
             },
             'headingCW2': {
                 'key': Keys.Right,
                 'ch': "D",
                 'fn': lambda:
-                    self.player.ship and
-                    self.headingAdjust(-11.25)
+                self.player.ship and
+                self.headingAdjust(-11.25)
             },
             'toggleAnchor': {
                 'key': Keys.Space,
@@ -423,30 +769,30 @@ class PlayState(GameState):
                 'key': Keys.NumPad8,
                 'ch': "W",
                 'fn': lambda:
-                    self.player.ship and
-                    self.adjustSails(1)
-                    
+                self.player.ship and
+                self.adjustSails(1)
+
             },
             'sailsUp2': {
                 'key': Keys.Up,
                 'ch': "W",
                 'fn': lambda:
-                    self.player.ship and
-                    self.adjustSails(1)
+                self.player.ship and
+                self.adjustSails(1)
             },
             'sailsDn': {
                 'key': Keys.NumPad2,
                 'ch': "s",
                 'fn': lambda:
-                    self.player.ship and
-                    self.adjustSails(-1)
+                self.player.ship and
+                self.adjustSails(-1)
             },
             'sailsDn2': {
                 'key': Keys.Down,
                 'ch': "S",
                 'fn': lambda:
-                    self.player.ship and
-                    self.adjustSails(-1)
+                self.player.ship and
+                self.adjustSails(-1)
             },
 
         })
@@ -456,13 +802,13 @@ class PlayState(GameState):
                 'key': Keys.Tab,
                 'ch': None,
                 'fn': lambda:
-                    self.removeView() and self.enableGameHandlers()
+                self.removeView() and self.enableGameHandlers()
             },
             'hideModal2': {
                 'key': Keys.Escape,
                 'ch': None,
                 'fn': lambda:
-                    self.removeView() and self.enableGameHandlers()
+                self.removeView() and self.enableGameHandlers()
             },
             'showMap': {
                 'key': None,
@@ -476,16 +822,204 @@ class PlayState(GameState):
             },
         })
 
+        self.cityModal.setKeyInputs({
+            'quit': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.quit
+            },
+            'castOff': {
+                'key': None,
+                'ch': 'd',
+                'fn': lambda:
+                    self.castOff(self.player.ship)
+            },
+            'castOff2': {
+                'key': None,
+                'ch': 'D',
+                'fn': lambda:
+                    self.castOff(self.player.ship)
+            },
+            'brothel': {
+                'key': None,
+                'ch': 'b',
+                'fn': self.brothel
+            },
+            'brothel2': {
+                'key': None,
+                'ch': 'B',
+                'fn': self.brothel
+            },
+            'showTavern': {
+                'key': None,
+                'ch': 't',
+                'fn': lambda:
+                    self.cityShowShop('tavern')
+            },
+            'showTavern2': {
+                'key': None,
+                'ch': 'T',
+                'fn': lambda:
+                    self.cityShowShop('tavern')
+            },
+            'showShipyard': {
+                'key': None,
+                'ch': 'y',
+                'fn': lambda:
+                    self.cityShowShop('shipyard')
+            },
+            'showShipyard2': {
+                'key': None,
+                'ch': 'Y',
+                'fn': lambda:
+                    self.cityShowShop('shipyard')
+            },
+            'showStore': {
+                'key': None,
+                'ch': 'n',
+                'fn': lambda:
+                self.cityShowShop('generalStore')
+            },
+            'showStore2': {
+                'key': None,
+                'ch': 'N',
+                'fn': lambda:
+                self.cityShowShop('generalStore')
+            },
+        })
+
+        ### Shipyard can use this...
+        # 'menuUp': {
+        #               'key': Keys.Up,
+        #               'ch': 'w',
+        #               'fn': self.cityMenuUp
+        #           },
+        # 'menuUp2': {
+        #                'key': Keys.NumPad8,
+        #                'ch': 'W',
+        #                'fn': self.cityMenuUp
+        #            },
+        # 'menuDn': {
+        #               'key': Keys.Down,
+        #               'ch': 's',
+        #               'fn': self.cityMenuDn
+        #           },
+        # 'menuDn2': {
+        #                'key': Keys.NumPad2,
+        #                'ch': 'S',
+        #                'fn': self.cityMenuDn
+        #            },
+        # 'menuSelect': {
+        #                   'key': Keys.Escape,
+        #                   'ch': None,
+        #                   'fn': self.cityMenuSelect
+        #               },
+
+    def cityShowShop(self, name):
+        self.disableShops()
+        element = getattr(self, '{}Frame'.format(name))
+        element.enable()
+
+    def brothel(self):
+        cost = self.currentCity.brothelRate * (self.player.ship.crew + 1)
+        if self.player.gold >= cost and self.player.morale < 100:
+            self.player.morale += self.currentCity.brothelReturn
+            self.player.gold -= cost
+        self.updateCityUI()
+
+    def updateTavernUI(self):
+        tavernStats = {
+            'Morale': self.player.morale,
+            'MinCrew': self.player.ship.minCrew,
+            'MaxCrew': self.player.ship.maxCrew,
+            'Sailors': self.currentCity.crewAvailable,
+            'Gold': self.player.gold
+        }
+        self.tavernStats.setItems(tavernStats)
+
+
     def adjustSails(self, val):
         self.player.ship.sailAdjust(val)
         self.sailSlider.val = self.player.ship.sails
 
 
     def toggleAnchor(self):
-
-        self.player.ship.toggleAnchor()
-        print "Anchor toggled[{}]".format(self.player.ship.anchored)
+        ship = self.player.ship
+        ship.toggleAnchor()
         self.updateAnchorUI()
+
+        if ship.anchored:
+            neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
+            cityMenu = []
+            cities = []
+            for x, y in neighbours:
+                c = neighbours[x, y]
+                if isinstance(c.entity, City):
+                    city = c.entity
+                    cities.append(city)
+                    label = "{} ({},{})".format(city.name, city.x, city.y)
+                    cityMenu.append({
+                        label:
+                            lambda i: self.removeView() and self.enterCity(self.player, cities[i])
+                    })
+            # if len(cities) == 1:
+            #     key = cities.keys()[0]
+            #     self.enterCity(self.player, cities.pop(key))
+            if len(cityMenu):
+                self.citySelection(cityMenu)
+
+    def citySelection(self, cityMenu):
+        title = "Choose from the following cities:"
+
+        cityMenu.append({
+            'Keep sailing': self.removeView
+        })
+
+        modalX = (self.mapElement.width / 2 - len(title) / 2) - 1
+        modalY = self.mapElement.height / 2 - 3
+        modalW = len(title) + 2
+        modalH = 6
+        print "MODAL: {},{} {},{}".format(modalX, modalY, modalW, modalH)
+        modal = View(modalW, modalH, modalX, modalY)
+        self.addView(modal)
+
+        modal.addElement(Elements.Frame(0, 0, modalW, modalH, title))
+        menu = modal.addElement(Elements.Menu(1, 1, modalW - 2, modalH - 2, cityMenu))
+        # menu.setWrap(False)
+
+        modal.setKeyInputs({
+            'moveUp': {
+                'key': Keys.Up,
+                'ch': 'w',
+                'fn': menu.selectUp
+            },
+            'moveUp2': {
+                'key': Keys.NumPad8,
+                'ch': 'W',
+                'fn': menu.selectUp
+            },
+            'moveDn': {
+                'key': Keys.Down,
+                'ch': 's',
+                'fn': menu.selectDown
+            },
+            'moveDn2': {
+                'key': Keys.NumPad2,
+                'ch': 'S',
+                'fn': menu.selectDown
+            },
+            'selectCity': {
+                'key': Keys.Enter,
+                'ch': None,
+                'fn': menu.selectFn
+            },
+            'selectCity2': {
+                'key': Keys.NumPadEnter,
+                'ch': None,
+                'fn': menu.selectFn
+            }
+        })
+
 
     def headingAdjust(self, val):
         if not self.player.ship:
@@ -595,7 +1129,7 @@ class PlayState(GameState):
         sys.exit()
 
 
-# TODO: UTIL Stuff.. shouldn't be here
+    # TODO: UTIL Stuff.. shouldn't be here
     def checkPath(self, x1, y1, x2, y2):
         path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc)
 

@@ -8,7 +8,7 @@ from RoguePy.UI.Elements import Element
 
 
 class Dict(Element):
-  
+
   def setItems(self, items):
     self.setDirty(True)
     self._items = items
@@ -27,11 +27,15 @@ class Dict(Element):
   
   def draw(self):
     y = 0
-    for key in self._items:
-      val = self._items[key]
-      libtcod.console_print(self.console, 0, y, key)
-      val = str(val)
-      libtcod.console_print(self.console, self.width - len(val), y, val)
-      y += 1
+    try:
+      for key in self._items:
+        val = self._items[key]
+        libtcod.console_print(self.console, 0, y, key)
+        val = str(val)
+        libtcod.console_print(self.console, self.width - len(val), y, val)
+        y += 1
 
-    self.setDirty(False)
+      self.setDirty(False)
+    except AttributeError:
+      # _items not yet set
+      return

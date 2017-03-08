@@ -231,7 +231,7 @@ class View(object):
     con = libtcod.console_new(el.width, el.height)
     libtcod.console_set_default_background(con, el.bg)
     libtcod.console_clear(con)
-    libtcod.console_blit(con, 0, 0, el.width, el.height, el.console, 0, 0, 0.0, 0.4)
+    libtcod.console_blit(con, 0, 0, el.width, el.height, el.console, 0, 0, 0.0, 0.6)
     libtcod.console_delete(con)
 
     el.setDirty()

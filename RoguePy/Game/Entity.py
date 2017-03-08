@@ -13,8 +13,6 @@ class Entity(object):
         self.fg = fg
         self.canSee = canSee
 
-        map.addEntity(self, x, y)
-
     def updateFov(self):
         pass
 

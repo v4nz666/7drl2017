@@ -57,12 +57,14 @@ class StateManager():
 
     self.tick += 1
 
-    if self.ui:
-      self.ui.refresh(state.view)
-
+    self.updateUi(state)
     state.processInput()
 
     self.stateTransition()
+
+  def updateUi(self, state):
+    if self.ui:
+      self.ui.refresh(state.view)
 
   def stateTransition(self):
     if self._nextState and self._currentState != self._nextState:

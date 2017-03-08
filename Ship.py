@@ -9,8 +9,8 @@ from shipTypes import shipTypes
 class Ship(Entity):
     def __init__(self, map, type, x, y, color, isPlayer=False):
         self.name = type
-        for attr, value in shipTypes[type].iteritems():
-            setattr(self, attr, value)
+        # for attr, value in shipTypes[type].iteritems():
+        #     setattr(self, attr, value)
         self.ch = '@'
         self.anchored = True
         self.hullDamage = 0
@@ -19,10 +19,13 @@ class Ship(Entity):
         self.headingRad = 0.0
         self.sails = 0
         self.speed = 0.0
+        self.crew = 0
+
+        self.stats = type
 
         self.canSee = True
-        self.viewRadius = 5
-        
+        self.viewRadius = 8
+
         self.x = x
         self.y = y
 
@@ -42,8 +45,41 @@ class Ship(Entity):
         for attr, value in shipTypes[type].iteritems():
             setattr(self, attr, value)
 
+        self.goods = {
+            'food': 0,
+            'rum': 0,
+            'wood': 0,
+            'cloth': 0,
+            'coffee': 0,
+            'spice': 0
+        }
+
+        self.inHold = 0
+
         self._initFovMap()
         self.calculateFovMap()
+
+    def addGoods(self, item):
+        if item not in self.goods:
+            return False
+
+        self.goods[item] += 1
+        self.inHold += 1
+        if self.inHold > self.size:
+            self.goods[item] -= 1
+            self.inHold -= 1
+            return False
+        return True
+
+    def takeGoods(self, item):
+        if item not in self.goods:
+            return False
+        if self.goods[item] < 1:
+            return False
+
+        self.goods[item] -= 1
+        self.inHold -= 1
+        return True
 
     @property
     def x(self):

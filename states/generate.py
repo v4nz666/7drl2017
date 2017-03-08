@@ -62,6 +62,7 @@ class GenerateState(GameState):
     def beforeUnload(self):
         pass
 
+
     def setupView(self):
         loadingText = "Generating"
         loadingX = (self.view.width - len(loadingText)) / 2

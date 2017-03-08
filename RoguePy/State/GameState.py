@@ -25,7 +25,7 @@ class GameState(object):
   def addView(self, view):
     self.__views.append(view)
   # Pop a view off the stack
-  def removeView(self):
+  def removeView(self, hack=None):
     if not len(self.__views) > 1 :
       raise IndexError("Tried to close last View on stack")
     return self.__views.pop()

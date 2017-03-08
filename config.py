@@ -20,6 +20,35 @@ wind = {
     'dirJitter': 5.0
 }
 
+city = {
+    'possibleShops': [
+        'tavern',
+        'gossip',
+        'brothel',
+        'shipyard'
+    ]
+}
+
+brothel = {
+    'baseRate': 10,
+    'baseReturn': 25
+}
+
+economy = {
+    'buyMul': 1.1,
+    'sellMul': 0.9,
+    'lowThreshold': 50,
+    'highThreshold': 1000,
+    'basePrice': {
+        'food': 3,
+        'rum': 5,
+        'wood': 10,
+        'cloth': 10,
+        'coffee': 20,
+        'spice': 25
+    }
+}
+
 maxSails = 10
 sailStep = 1.0 / maxSails
 

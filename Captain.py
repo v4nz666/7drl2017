@@ -17,3 +17,12 @@ class Captain(object):
     def setShip(self, ship):
         self.ship = ship
         self.inSight = ship.inSight
+
+    @property
+    def morale(self):
+        return self.__morale
+    @morale.setter
+    def morale(self, val):
+        self.__morale = min(100, max(val, 0))
+
+
