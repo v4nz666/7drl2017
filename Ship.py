@@ -150,3 +150,20 @@ class Ship(Entity):
             self.heading += 360
         elif self.heading >= 360:
             self.heading -= 360
+
+    def repairHull(self):
+        if not self.stats['hullDamage']:
+            return False
+        self.stats['hullDamage'] -= config.shipyard['repairReturn']
+        if self.stats['hullDamage'] < 0:
+            self.stats['hullDamage'] = 0
+
+        return True
+
+    def repairSails(self):
+        if not self.stats['sailDamage']:
+            return False
+        self.stats['sailDamage'] -= config.shipyard['repairReturn']
+        if self.stats['sailDamage'] < 0:
+            self.stats['sailDamage'] = 0
+        return True

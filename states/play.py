@@ -1,5 +1,5 @@
 from shipTypes import shipTypes
-from util import randfloat, degToRad, randint
+from util import randfloat, degToRad, randint, getColor
 from math import sin, cos
 from Captain import Captain
 from City import City
@@ -209,9 +209,31 @@ class PlayState(GameState):
 
     def updateShipyardUI(self):
         # Repairs
+        rateStr = "${}/{}".format(self.currentCity.repairRate, config.shipyard['repairReturn'])
+        self.repairRateVal.setLabel(rateStr)
         if self.player.ship:
-            self.repairHullTotal = self.player.ship.stats['hullDamage']
-            self.repairSailTotal = self.player.ship.stats['sailDamage']
+            hullDamage = self.player.ship.stats['hullDamage']
+            sailDamage = self.player.ship.stats['sailDamage']
+            hullColor = getColor(hullDamage)
+            sailColor = getColor(sailDamage)
+            self.repairHullCurrent.setLabel(str(hullDamage)).setDefaultForeground(hullColor)
+            self.repairSailCurrent.setLabel(str(sailDamage)).setDefaultForeground(sailColor)
+
+
+            if not self.player.ship.goods['wood']:
+                self.notEnoughWood.setDefaultForeground(Colors.darker_red)
+            else:
+                self.notEnoughWood.setDefaultForeground(Colors.darker_green)
+            if not self.player.ship.goods['cloth']:
+                self.notEnoughCloth.setDefaultForeground(Colors.darker_red)
+            else:
+                self.notEnoughCloth.setDefaultForeground(Colors.darker_green)
+        else:
+            self.repairHullCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
+            self.repairSailCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
+
+        # Ammo
+        self.ammoPriceLabel.setLabel("${}/{}" .format(self.currentCity.ammoRate, config.shipyard['ammoBuyCount']))
 
         # Buy sell ships
         self.shipyardMenu.setItems(self.currentCity.availableShips)
@@ -553,12 +575,14 @@ class PlayState(GameState):
         self.repairFrame = self.shipyardFrame.addElement(Elements.Frame(1, 1, 13, 8, 'REPAIRS'))
         self.repairHullLabel = self.repairFrame.addElement(Elements.Label(1, 2, "(H)ULL"))
         self.notEnoughWood = self.repairFrame.addElement(Elements.Label(8, 2, "wood"))
+        self.repairRateVal = self.repairFrame.addElement(Elements.Label(3, 6, "      "))
+
         self.repairHullTotal = self.repairFrame.addElement(Elements.Label(6, 3, "/ 100"))
-        self.repairHullCurrent = self.repairFrame.addElement(Elements.Label(2, 3, "25"))
+        self.repairHullCurrent = self.repairFrame.addElement(Elements.Label(2, 3, "000"))
         self.repairSailLabel = self.repairFrame.addElement(Elements.Label(1, 4, "(S)AIL"))
         self.notEnoughCloth = self.repairFrame.addElement(Elements.Label(7, 4, "cloth"))
         self.repairSailTotal = self.repairFrame.addElement(Elements.Label(6, 5, "/ 100"))
-        self.repairSailCurrent = self.repairFrame.addElement(Elements.Label(2, 5, "80"))
+        self.repairSailCurrent = self.repairFrame.addElement(Elements.Label(2, 5, "000"))
         # Ammo
         self.ammoFrame = self.shipyardFrame.addElement(Elements.Frame(14, 1, 14, 8, 'AMMO'))
         self.ammoPriceLabel = self.ammoFrame.addElement(Elements.Label(3, 6, "$20/10"))
@@ -662,10 +686,11 @@ class PlayState(GameState):
 
         self.repairHullTotal.setDefaultForeground(Colors.lighter_sepia)
         self.repairSailTotal.setDefaultForeground(Colors.lighter_sepia)
+        self.repairRateVal.setDefaultForeground(Colors.gold)
         self.repairHullCurrent.setDefaultForeground(Colors.darker_green)
         self.repairSailCurrent.setDefaultForeground(Colors.dark_red)
         self.notEnoughWood.setDefaultForeground(Colors.darker_red)
-        self.notEnoughCloth.setDefaultForeground(Colors.darker_green)
+        self.notEnoughCloth.setDefaultForeground(Colors.darker_red)
 
         self.ammoPriceLabel.setDefaultForeground(Colors.gold)
         self.cannonballLabel.setDefaultForeground(Colors.lighter_sepia)
@@ -973,8 +998,56 @@ class PlayState(GameState):
                 'ch': None,
                 'fn': self.buyShip
             },
+            'fixHull': {
+                'key': None,
+                'ch': 'h',
+                'fn': self.repairHull
+            },
+            'fixHull2': {
+                'key': None,
+                'ch': 'H',
+                'fn': self.repairHull
+            },
+            'fixSails': {
+                'key': None,
+                'ch': 's',
+                'fn': self.repairSails
 
+            },
+            'fixSails2': {
+                'key': None,
+                'ch': 'S',
+                'fn': self.repairSails
+            }
         })
+
+    def repairHull(self):
+        if not self.player.ship:
+            return False
+        cost = self.currentCity.repairRate
+        if self.player.gold < cost:
+            return False
+
+        if not self.player.ship.takeGoods('wood'):
+            return False
+
+        if self.player.ship.repairHull():
+            self.player.gold -= cost
+            self.updateCityUI()
+
+    def repairSails(self):
+        if not self.player.ship:
+            return False
+        cost = self.currentCity.repairRate
+        if self.player.gold < cost:
+            return False
+
+        if not self.player.ship.takeGoods('cloth'):
+            return False
+
+        if self.player.ship.repairSails():
+            self.player.gold -= cost
+            self.updateCityUI()
 
     def updateShipStats(self):
         if not len(self.currentCity.availableShips):
@@ -1001,7 +1074,6 @@ class PlayState(GameState):
 
 
     def buyGoods(self, index):
-
         if not self.player.ship:
             return
         itemName = self.getItemByIndex(index)
@@ -1016,7 +1088,6 @@ class PlayState(GameState):
 
         self.currentCity.goods[itemName] -= 1
         self.player.gold -= price
-
         self.updateCityUI()
 
     def sellStuff(self, index):
@@ -1048,19 +1119,24 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def updateTavernUI(self):
-        minCrew = "n / a"
-        maxCrew = "n / a"
+        minCrew = "n/a"
+        maxCrew = "n/a"
+        crew = "n/a"
         if self.player.ship:
             minCrew = self.player.ship.stats['minCrew']
             maxCrew = self.player.ship.stats['maxCrew']
+            crew = self.player.ship.crew
 
         tavernStats = {
             'Morale': self.player.morale,
             'MinCrew': minCrew,
             'MaxCrew': maxCrew,
-            'Sailors': self.currentCity.crewAvailable,
+            'Crew': crew,
             'Gold': self.player.gold
         }
+        #TODO Add label for crew available
+        #self.currentCity.crewAvailable
+
         self.tavernStats.setItems(tavernStats)
 
 

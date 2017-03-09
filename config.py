@@ -34,6 +34,13 @@ brothel = {
     'baseReturn': 25
 }
 
+shipyard = {
+    'repairRate': 20,
+    'repairReturn': 5,
+    'ammoRate': 20,
+    'ammoBuyCount': 10
+}
+
 economy = {
     'buyMul': 1.1,
     'sellMul': 0.9,

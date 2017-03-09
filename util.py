@@ -1,3 +1,4 @@
+from RoguePy.UI import Colors
 from RoguePy.libtcod import libtcod
 from math import pi
 
@@ -12,6 +13,16 @@ def randfloat(mx, mn=0):
 
 degToRad = pi / 180
 radToDeg = 180 / pi
+
+def getColor(val):
+    clr = Colors.dark_red
+    if val <= 20:
+        clr = Colors.dark_green
+    elif val <= 50:
+        clr = Colors.dark_lime
+    elif val <= 80:
+        clr = Colors.dark_orange
+    return clr
 
 def getPirateName():
 

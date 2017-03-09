@@ -20,6 +20,9 @@ class City(Entity):
         self.portY = portY
 
         self.prices = {}
+        self.repairRate = 0
+        self.brothelRate = 0
+        self.brothelReturn = 0
 
         self.size = randint(1, 4)
         self.setShops()
@@ -61,9 +64,13 @@ class City(Entity):
     def setPrices(self):
         for item in ['food','rum','wood','cloth','coffee','spice']:
             self.prices[item] = self.calculateBuySellPrice(item)
+
         self.brothelRate = int(self.size * randfloat(0.8, 1.2) * config.brothel['baseRate'])
         self.brothelReturn = min(int(self.size * randfloat(0.8, 1.2) * config.brothel['baseReturn']), 100)
-        print "Brothel Rate: {} Return: {}".format(self.brothelRate, self.brothelReturn)
+
+        self.repairRate = int(randfloat(0.8, 1.2) * config.shipyard['repairRate'])
+
+        self.ammoRate = int(randfloat(0.8, 1.2) * config.shipyard['ammoRate'])
 
     def getPrices(self, item):
         return self.prices[item]
