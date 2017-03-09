@@ -1,5 +1,5 @@
 from Ship import Ship
-from util import randint
+from util import randint, getColor
 
 
 class Captain(object):
@@ -15,6 +15,11 @@ class Captain(object):
         }
         self.gold = 0
         self.lastCity = None
+
+        self.setMoraleColor()
+
+    def setMoraleColor(self):
+        self.moraleColor = getColor(self.morale)
 
     def setCity(self, city):
         self.lastCity = city
@@ -64,6 +69,14 @@ class Captain(object):
         print "Bought [{}] ship with stats {}. Goods{}".format(shipType, stats, self.ship.goods)
 
         return True
+
+    def moraleAdjust(self, val):
+        self.morale += val
+        if self.morale > 100:
+            self.morale = 100
+        if self.morale < 0:
+            self.morale = 0
+        self.setMoraleColor()
 
     def sellShip(self):
         value = Ship.getSellPrice(self.ship.stats)

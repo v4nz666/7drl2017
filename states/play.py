@@ -161,12 +161,16 @@ class PlayState(GameState):
         self.cityShowShop('generalStore')
 
         self.shipyardMenu.selected = 0
+        self.storeMenu.selected = 0
 
         self.updateCityUI()
         print 'PORT {},{}'.format(city.portX, city.portY)
 
     def castOff(self, ship):
         if not self.player.ship:
+            return False
+        if self.player.ship.crew < self.player.ship.stats['minCrew']:
+            print "Not enough crew to sail!"
             return False
 
         self.removeView()
@@ -251,12 +255,13 @@ class PlayState(GameState):
     def updateBrothelValues(self):
         c = self.currentCity
         if self.player.ship:
-            crew = self.player.ship.crew + 1
+            crew = self.player.ship.crew
         else:
-            crew = 1
+            crew = 0
+        totalCrew = crew + 1
         self.brothelRateVal.setLabel(str(c.brothelRate))
-        self.brothelCrewVal.setLabel(str(crew))
-        self.brothelCost = c.brothelRate * (crew)
+        self.brothelCrewVal.setLabel(str("{}(+1)".format(crew)))
+        self.brothelCost = c.brothelRate * (totalCrew)
         self.brothelCostVal.setLabel(str(self.brothelCost))
         self.brothelGoldVal.setLabel(str(self.player.gold))
         self.brothelMoraleVal.setLabel(str(self.player.morale))
@@ -271,10 +276,12 @@ class PlayState(GameState):
         self.storeTownCloth.setLabel(str(cityGoods['cloth']).zfill(3))
         self.storeTownCoffee.setLabel(str(cityGoods['coffee']).zfill(3))
         self.storeTownSpice.setLabel(str(cityGoods['spice']).zfill(3))
+
+        self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
+
         if self.player.ship:
             shipGoods = self.player.ship.goods
             print "Ship goods {}".format(shipGoods)
-            self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
             self.storeShipFood.setLabel(str(shipGoods['food']).zfill(4))
             self.storeShipRum.setLabel(str(shipGoods['rum']).zfill(3))
             self.storeShipWood.setLabel(str(shipGoods['wood']).zfill(3))
@@ -285,6 +292,13 @@ class PlayState(GameState):
             inHold = self.player.ship.inHold
             shipSize = self.player.ship.stats['size']
         else:
+            self.storeShipFood.setLabel(str(0).zfill(3))
+            self.storeShipRum.setLabel(str(0).zfill(3))
+            self.storeShipWood.setLabel(str(0).zfill(3))
+            self.storeShipCloth.setLabel(str(0).zfill(3))
+            self.storeShipCoffee.setLabel(str(0).zfill(3))
+            self.storeShipSpice.setLabel(str(0).zfill(3))
+
             inHold = 0
             shipSize = 0
         self.inHoldVal.setLabel(str(inHold))
@@ -567,7 +581,7 @@ class PlayState(GameState):
         self.buyPrice = self.buyPriceFrame.addElement(Elements.Label(2, 1, "1000"))
         self.holdFrame = self.generalStoreFrame.addElement(Elements.Frame(8, 9, 11, 3, "Hold/max"))
         self.inHoldVal = self.holdFrame.addElement(Elements.Label(1, 1, "000"))
-        self.holdFrame.addElement(Elements.Label(5, 1, '/'))
+        holdSlash = self.holdFrame.addElement(Elements.Label(5, 1, '/'))
         self.inHoldTotal = self.holdFrame.addElement(Elements.Label(7, 1, "750"))
 
         self.sellPriceFrame = self.generalStoreFrame.addElement(Elements.Frame(19, 9, 7, 3, "Sell"))
@@ -575,8 +589,8 @@ class PlayState(GameState):
         self.sellPrice = self.sellPriceFrame.addElement(Elements.Label(2, 1, "1000"))
 
         salesFinal = self.generalStoreFrame.addElement(Elements.Label(6, 12, "All sales final!"))
-        storeUpDnHelp = self.generalStoreFrame.addElement(Elements.Label(5, 13, "Up/Dn-Select Goods"))
-        storeBuySellHelp = self.generalStoreFrame.addElement(Elements.Label(6, 14, "Lft/Rgt-Buy/Sell"))
+        self.generalStoreFrame.addElement(Elements.Label(5, 13, "Up/Dn-Select Goods"))
+        self.generalStoreFrame.addElement(Elements.Label(6, 14, "Lft/Rgt-Buy/Sell"))
 
         ### Shipyard
         # Repairs
@@ -620,7 +634,7 @@ class PlayState(GameState):
         self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Rate"))
         self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 4, "20"))
         self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Crew"))
-        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 5, "120"))
+        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 5, "120(+1)"))
         self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Cost"))
         self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 6, "24000"))
         self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Gold"))
@@ -635,11 +649,12 @@ class PlayState(GameState):
         self.tavernQuote = self.tavernFrame.addElement(Elements.Label(1, 5, tavernQuote))
         self.buyARoundLabel = self.tavernFrame.addElement(Elements.Label(1, 7, "Buy a (R)ound"))
         self.hireCrewLabel = self.tavernFrame.addElement(Elements.Label(1, 8, "(H)ire Sailors"))
-        tavernOnShipLabel = self.tavernFrame.addElement(Elements.Label(18, 2, "on ship"))
+        self.tavernFrame.addElement(Elements.Label(18, 1, "on ship"))
+        self.tavernFrame.addElement(Elements.Label(18, 8, "in town"))
+        self.tavernCrewLabel = self.tavernFrame.addElement(Elements.Label(16, 9, "Crew"))
+        self.tavernCrewAvailable = self.tavernFrame.addElement(Elements.Label(24, 9, "000"))
 
-
-
-        self.tavernStats = self.tavernFrame.addElement(Elements.Dict(16, 3, 11, 5))
+        self.tavernStats = self.tavernFrame.addElement(Elements.Dict(16, 2, 11, 5))
 
         ### Dock
         dockText = "Set sail for the open sea. Make sure you have enough food and rum for the journey!"
@@ -679,7 +694,12 @@ class PlayState(GameState):
         self.storeTownCloth.setDefaultForeground(Colors.lighter_sepia)
         self.storeTownCoffee.setDefaultForeground(Colors.lighter_sepia)
         self.storeTownSpice.setDefaultForeground(Colors.lighter_sepia)
+        self.buyPrice.setDefaultForeground(Colors.gold)
+        self.sellPrice.setDefaultForeground(Colors.gold)
 
+        self.inHoldVal.setDefaultForeground(Colors.lighter_sepia)
+        # holdSlash.setDefaultForeground(Colors.lighter_sepia)
+        self.inHoldTotal.setDefaultForeground(Colors.lighter_sepia)
         buyDollar.setDefaultForeground(Colors.gold)
         sellDollar.setDefaultForeground(Colors.gold)
         salesFinal.setDefaultForeground(Colors.darker_red)
@@ -712,7 +732,8 @@ class PlayState(GameState):
         self.buyARoundLabel.setDefaultForeground(Colors.lighter_sepia)
         self.hireCrewLabel.setDefaultForeground(Colors.lighter_sepia)
         self.tavernStats.setDefaultForeground(Colors.lighter_sepia)
-
+        self.tavernCrewAvailable.setDefaultForeground(Colors.lighter_sepia)
+        self.tavernCrewLabel.setDefaultForeground(Colors.lighter_sepia)
         # Brothel colors
         self.brothelText.setDefaultForeground(Colors.lightest_sepia)
         self.brothelRateVal.setDefaultForeground(Colors.gold)
@@ -1053,30 +1074,56 @@ class PlayState(GameState):
         })
 
 
-        # self.tavernFrame.setKeyInputs({
-        #     'hire': {
-        #         'key': None,
-        #         'ch': 's',
-        #         'fn': self.repairSails
-        #
-        #     },
-        #     'hire2': {
-        #         'key': None,
-        #         'ch': 'S',
-        #         'fn': self.repairSails
-        #     },
-        #     'buyRound': {
-        #         'key': None,
-        #         'ch': 'a',
-        #         'fn': self.buyCannon
-        #
-        #     },
-        #     'buyRound2': {
-        #         'key': None,
-        #         'ch': 'S',
-        #         'fn': self.buyChain
-        #     }
-        # })
+        self.tavernFrame.setKeyInputs({
+            'hire': {
+                'key': None,
+                'ch': 'h',
+                'fn': self.hireCrew
+            },
+            'hire2': {
+                'key': None,
+                'ch': 'H',
+                'fn': self.hireCrew
+            },
+            'buyRound': {
+                'key': None,
+                'ch': 'a',
+                'fn': self.buyRound
+
+            },
+            'buyRound2': {
+                'key': None,
+                'ch': 'S',
+                'fn': self.buyRound
+            }
+        })
+
+    def hireCrew(self):
+        if not self.player.ship or self.player.ship.crew >= self.player.ship.stats['maxCrew']:
+            return False
+
+        rate = self.currentCity.hireRate
+        if self.player.gold >= rate and self.currentCity.hireCrewMember():
+            self.player.ship.crew += 1
+            self.updateCityUI()
+            return True
+        else:
+            return False
+
+
+    def buyRound(self):
+        if not self.player.ship:
+            crew = 0
+        else:
+            crew = self.player.ship.crew
+
+        rate = (crew + 1)
+        if self.player.gold >= rate:
+            self.player.moraleAdjust(config.tavern['drinkMorale'])
+            self.updateCityUI()
+            return True
+        else:
+            return False
 
     def buyCannon(self):
         if not self.player.ship or not self.player.ship.addCannonballs(config.shipyard['ammoBuyCount']):
@@ -1085,7 +1132,6 @@ class PlayState(GameState):
         print "bought balls"
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
-
 
     def buyChain(self):
         if not self.player.ship or not self.player.ship.addChainshot(config.shipyard['ammoBuyCount']):
@@ -1151,9 +1197,10 @@ class PlayState(GameState):
     def buyGoods(self, index):
         if not self.player.ship:
             return
-        itemName = self.getItemByIndex(index)
 
+        itemName = self.getItemByIndex(index)
         price = self.currentCity.getBuyPrice(itemName)
+
         if self.player.gold < price:
             return
         if self.currentCity.goods[itemName] < 1:
@@ -1166,8 +1213,12 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def sellStuff(self, index):
+        if not self.player.ship:
+            return
+
         itemName = self.getItemByIndex(index)
         price = self.currentCity.getSellPrice(itemName)
+
         if self.currentCity.gold < price:
             return
         if not self.player.ship.takeGoods(itemName):
@@ -1209,8 +1260,8 @@ class PlayState(GameState):
             'Crew': crew,
             'Gold': self.player.gold
         }
-        #TODO Add label for crew available
-        #self.currentCity.crewAvailable
+
+        self.tavernCrewAvailable.setLabel(str(self.currentCity.crewAvailable))
 
         self.tavernStats.setItems(tavernStats)
 

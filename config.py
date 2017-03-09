@@ -41,6 +41,13 @@ shipyard = {
     'ammoBuyCount': 10
 }
 
+tavern = {
+    'hireRate': 10,
+    'drinkPrice': 1,
+    'drinkMorale': 5
+
+}
+
 economy = {
     'buyMul': 1.1,
     'sellMul': 0.9,

@@ -33,10 +33,16 @@ class City(Entity):
 
         self.setAvailableShips()
 
-        self.crewAvailable = int(randfloat(.25, 2) * self.size)
+        self.crewAvailable = randint(20, 5) * self.size
 
     def __str__(self):
         return '{}[{}] at {}, {}\n  Shops: {}\n Port: {}, {}'.format(self.name, self.size, self.x, self.y, self.shops, self.portX, self.portY)
+
+    def hireCrewMember(self):
+        if self.crewAvailable:
+            self.crewAvailable -= 1
+            return True
+        return False
 
     def setShops(self):
 
@@ -71,6 +77,8 @@ class City(Entity):
         self.repairRate = int(randfloat(0.8, 1.2) * config.shipyard['repairRate'])
 
         self.ammoRate = int(randfloat(0.8, 1.2) * config.shipyard['ammoRate'])
+        self.hireRate = int(randfloat(0.8, 1.2) * config.tavern['hireRate'])
+
 
     def getPrices(self, item):
         return self.prices[item]
