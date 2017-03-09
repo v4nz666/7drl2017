@@ -35,8 +35,9 @@ class City(Entity):
             count -= 1
 
     def setGoods(self):
+
+        self.gold = randint(1000) * self.size,
         self.goods = {
-            'gold': randint(1000) * self.size,
             'food': randint(500) * self.size,
             'rum': randint(200) * self.size,
             'wood': randint(200) * self.size,
@@ -52,8 +53,14 @@ class City(Entity):
         self.brothelReturn = min(int(self.size * randfloat(0.8, 1.2) * config.brothel['baseReturn']), 100)
         print "Brothel Rate: {} Return: {}".format(self.brothelRate, self.brothelReturn)
 
-    def getPrice(self, item):
+    def getPrices(self, item):
         return self.prices[item]
+
+    def getBuyPrice(self, item):
+        return self.getPrices(item)[0]
+
+    def getSellPrice(self, item):
+        return self.getPrices(item)[1]
 
     def calculateBuySellPrice(self, item):
         count = self.goods[item]

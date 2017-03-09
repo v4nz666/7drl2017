@@ -242,16 +242,16 @@ class PlayState(GameState):
         self.brothelMoraleVal.setLabel(str(self.player.morale))
 
     def updateStoreItems(self):
-        
+
         cityGoods = self.currentCity.getGoods()
-        self.storeTownGold.setLabel(str(cityGoods['gold']).zfill(5))
+        self.storeTownGold.setLabel(str(self.currentCity.gold).zfill(5))
         self.storeTownFood.setLabel(str(cityGoods['food']).zfill(4))
         self.storeTownRum.setLabel(str(cityGoods['rum']).zfill(3))
         self.storeTownWood.setLabel(str(cityGoods['wood']).zfill(3))
         self.storeTownCloth.setLabel(str(cityGoods['cloth']).zfill(3))
         self.storeTownCoffee.setLabel(str(cityGoods['coffee']).zfill(3))
         self.storeTownSpice.setLabel(str(cityGoods['spice']).zfill(3))
-        
+
         shipGoods = self.player.ship.goods
         self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
         self.storeShipFood.setLabel(str(shipGoods['food']).zfill(4))
@@ -260,6 +260,15 @@ class PlayState(GameState):
         self.storeShipCloth.setLabel(str(shipGoods['cloth']).zfill(3))
         self.storeShipCoffee.setLabel(str(shipGoods['coffee']).zfill(3))
         self.storeShipSpice.setLabel(str(shipGoods['spice']).zfill(3))
+
+        if self.player.ship:
+            inHold = self.player.ship.inHold
+            shipSize = self.player.ship.size
+        else:
+            inHold = 0
+            shipSize = 0
+        self.inHoldVal.setLabel(str(inHold))
+        self.inHoldTotal.setLabel(str(shipSize))
 
         self.updateBuySellPrices()
 
@@ -273,7 +282,7 @@ class PlayState(GameState):
             'spice'
         ][self.storeMenu.selected]
 
-        buy, sell = self.currentCity.getPrice(selectedItem)
+        buy, sell = self.currentCity.getPrices(selectedItem)
 
         self.buyPrice.setLabel(str(buy))
         self.sellPrice.setLabel(str(sell))
@@ -537,7 +546,7 @@ class PlayState(GameState):
         buyDollar = self.buyPriceFrame.addElement(Elements.Label(1, 1, "$"))
         self.buyPrice = self.buyPriceFrame.addElement(Elements.Label(2, 1, "1000"))
         self.holdFrame = self.generalStoreFrame.addElement(Elements.Frame(8, 9, 11, 3, "Hold/max"))
-        self.inHoldVal = self.holdFrame.addElement(Elements.Label(1, 1, "750"))
+        self.inHoldVal = self.holdFrame.addElement(Elements.Label(1, 1, "000"))
         self.holdFrame.addElement(Elements.Label(5, 1, '/'))
         self.inHoldTotal = self.holdFrame.addElement(Elements.Label(7, 1, "750"))
 
@@ -551,14 +560,14 @@ class PlayState(GameState):
 
         ### Shipyard
         # Repairs
-        self.repairFrame = self.shipyardFrame.addElement(Elements.Frame(1, 1, 14, 8, 'REPAIRS'))
+        self.repairFrame = self.shipyardFrame.addElement(Elements.Frame(1, 1, 13, 8, 'REPAIRS'))
         self.repairHullLabel = self.repairFrame.addElement(Elements.Label(1, 2, "(H)ULL"))
         self.notEnoughWood = self.repairFrame.addElement(Elements.Label(8, 2, "wood"))
-        self.repairHullTotal = self.repairFrame.addElement(Elements.Label(7, 3, "/ 100"))
+        self.repairHullTotal = self.repairFrame.addElement(Elements.Label(6, 3, "/ 100"))
         self.repairHullCurrent = self.repairFrame.addElement(Elements.Label(2, 3, "25"))
         self.repairSailLabel = self.repairFrame.addElement(Elements.Label(1, 4, "(S)AIL"))
-        self.notEnoughCloth = self.repairFrame.addElement(Elements.Label(8, 4, "cloth"))
-        self.repairSailTotal = self.repairFrame.addElement(Elements.Label(7, 5, "/ 100"))
+        self.notEnoughCloth = self.repairFrame.addElement(Elements.Label(7, 4, "cloth"))
+        self.repairSailTotal = self.repairFrame.addElement(Elements.Label(6, 5, "/ 100"))
         self.repairSailCurrent = self.repairFrame.addElement(Elements.Label(2, 5, "80"))
         # Ammo
         self.ammoFrame = self.shipyardFrame.addElement(Elements.Frame(14, 1, 14, 8, 'AMMO'))
@@ -682,17 +691,17 @@ class PlayState(GameState):
         self.tavernStats.setDefaultForeground(Colors.lighter_sepia)
 
         # Brothel colors
-        self.brothelText.setDefaultForeground(Colors.lighter_sepia)
+        self.brothelText.setDefaultForeground(Colors.lightest_sepia)
         self.brothelRateVal.setDefaultForeground(Colors.gold)
         self.brothelCostVal.setDefaultForeground(Colors.gold)
         self.brothelGoldVal.setDefaultForeground(Colors.gold)
 
         #Gossip colors
-        self.gossipText.setDefaultForeground(Colors.lighter_sepia)
+        self.gossipText.setDefaultForeground(Colors.lightest_sepia)
         self.gossipRepVal.setDefaultForeground(Colors.lighter_sepia)
 
         # Dock colors
-        self.dockText.setDefaultForeground(Colors.lighter_sepia)
+        self.dockText.setDefaultForeground(Colors.lightest_sepia)
         ## Intro modal
         modalX = halfX / 2 - 1
         modalY = halfY / 2
@@ -888,32 +897,92 @@ class PlayState(GameState):
             },
         })
 
-        ### Shipyard can use this...
-        # 'menuUp': {
-        #               'key': Keys.Up,
-        #               'ch': 'w',
-        #               'fn': self.cityMenuUp
-        #           },
-        # 'menuUp2': {
-        #                'key': Keys.NumPad8,
-        #                'ch': 'W',
-        #                'fn': self.cityMenuUp
-        #            },
-        # 'menuDn': {
-        #               'key': Keys.Down,
-        #               'ch': 's',
-        #               'fn': self.cityMenuDn
-        #           },
-        # 'menuDn2': {
-        #                'key': Keys.NumPad2,
-        #                'ch': 'S',
-        #                'fn': self.cityMenuDn
-        #            },
-        # 'menuSelect': {
-        #                   'key': Keys.Escape,
-        #                   'ch': None,
-        #                   'fn': self.cityMenuSelect
-        #               },
+        self.storeMenu.setKeyInputs({
+            'menuUp': {
+                'key': Keys.Up,
+                'ch': 'w',
+                'fn': lambda: self.storeMenu.selectUp() and
+                      self.updateBuySellPrices()
+            },
+            'menuUp2': {
+                'key': Keys.NumPad8,
+                'ch': 'W',
+                'fn': lambda: self.storeMenu.selectUp() and
+                      self.updateBuySellPrices()
+            },
+            'menuDn': {
+                'key': Keys.Down,
+                'ch': 's',
+                'fn': lambda: self.storeMenu.selectDown() and
+                      self.updateBuySellPrices()
+            },
+            'menuDn2': {
+                'key': Keys.NumPad2,
+                'ch': 'S',
+                'fn': lambda: self.storeMenu.selectDown() and
+                      self.updateBuySellPrices()
+            },
+            'buy': {
+                'key': Keys.Left,
+                'ch': 'a',
+                'fn': lambda:
+                    self.buyStuff(self.storeMenu.selected)
+            },
+            'buy2': {
+                'key': Keys.NumPad4,
+                'ch': 'A',
+                'fn': lambda:
+                    self.buyStuff(self.storeMenu.selected)
+            },
+            'sell': {
+                'key': Keys.Right,
+                'ch': 'd',
+                'fn': lambda:
+                    self.sellStuff(self.storeMenu.selected)
+            },
+            'sell2': {
+                'key': Keys.NumPad6,
+                'ch': 'D',
+                'fn': lambda:
+                    self.sellStuff(self.storeMenu.selected)
+            },
+        })
+    
+    def buyStuff(self, index):
+
+        itemName = self.getItemByIndex(index)
+
+        price = self.currentCity.getBuyPrice(itemName)
+        if self.player.gold < price:
+            print "can't afford{}/{}".format(self.player.gold, price)
+            return
+        if self.currentCity.goods[itemName] < 1:
+            print "non in city"
+            return
+
+        if not self.player.ship.addGoods(itemName):
+            print "won't fit on ship"
+            return
+        self.currentCity.goods[itemName] -= 1
+        self.player.gold -= price
+
+        self.updateCityUI()
+
+    def sellStuff(self, index):
+        itemName = self.getItemByIndex(index)
+        price = self.currentCity.getSellPrice(itemName)
+        if self.currentCity.gold < price:
+            return
+        if not self.player.ship.takeGoods(itemName):
+            return
+        self.currentCity.goods[itemName] += 1
+        self.player.gold += price
+
+        self.updateCityUI()
+
+    @staticmethod
+    def getItemByIndex(index):
+        return['food', 'rum', 'wood', 'cloth', 'coffee', 'spice'][index]
 
     def cityShowShop(self, name):
         self.disableShops()
@@ -985,8 +1054,8 @@ class PlayState(GameState):
 
         modal.addElement(Elements.Frame(0, 0, modalW, modalH, title))
         menu = modal.addElement(Elements.Menu(1, 1, modalW - 2, modalH - 2, cityMenu))
-        # menu.setWrap(False)
-
+        menu.setWrap(False)
+        modal.setDefaultColors(Colors.lighter_sepia, Colors.darker_sepia, True)
         modal.setKeyInputs({
             'moveUp': {
                 'key': Keys.Up,

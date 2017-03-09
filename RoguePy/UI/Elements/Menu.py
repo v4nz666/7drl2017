@@ -46,9 +46,11 @@ class Menu(List):
   
   def selectUp(self):
     self._moveSelect(-1)
+    return self
     
   def selectDown(self):
     self._moveSelect(1)
+    return self
   
   def _moveSelect(self, step):
     newIndex = self.selected + step

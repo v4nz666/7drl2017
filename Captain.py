@@ -13,6 +13,7 @@ class Captain(object):
             'charisma': randint(10)
         }
         self.gold = 0
+        self.lastCity = None
 
     def setShip(self, ship):
         self.ship = ship
