@@ -1,22 +1,34 @@
+import sys
+
 import config
 from RoguePy.Game import Entity
+from Ship import Ship
+from shipTypes import shipTypes
 from util import randint, randfloat
 
 
 class City(Entity):
 
-    def __init__(self, map, x, y, name, ch, fg):
+    def __init__(self, map, x, y, name, portX, portY, ch, fg):
         super(City, self).__init__(map, x, y, name, ch, fg)
         self.shops = [
             'Dock',
             'General Store'
         ]
 
+        self.portX = portX
+        self.portY = portY
+
         self.prices = {}
 
         self.size = randint(1, 4)
         self.setShops()
         self.setGoods()
+
+        self.availableShips = []
+        self.availableShipStats = []
+
+        self.setAvailableShips()
 
         self.crewAvailable = int(randfloat(.25, 2) * self.size)
 
@@ -36,7 +48,7 @@ class City(Entity):
 
     def setGoods(self):
 
-        self.gold = randint(1000) * self.size,
+        self.gold = randint(1000) * self.size
         self.goods = {
             'food': randint(500) * self.size,
             'rum': randint(200) * self.size,
@@ -79,6 +91,45 @@ class City(Entity):
 
     def getGoods(self):
         return self.goods
+
+    def setAvailableShips(self):
+        for x in range(int(self.size * randfloat(3))):
+            self.addShip()
+
+    def getAvailableShip(self, index):
+
+        if len(self.availableShips):
+            return self.availableShips[index].keys()[0], self.availableShips[index].values()[0]
+        else:
+            return False, False
+
+    def addShip(self, shipType=None, shipStats=None):
+
+        if shipType is None:
+            shipType = shipTypes.keys()[randint(len(shipTypes) - 1)]
+            print "Got random ship type[{}]".format(shipType)
+        else:
+            print "using type[{}]".format(shipType)
+        stats = shipStats
+        if shipStats is None:
+            shipStats = shipTypes[shipType]
+            stats = {}
+            for k, v in shipStats.iteritems():
+                stats[k] = v
+            stats['hullDamage'] = randint(25)
+            stats['sailDamage'] = randint(25)
+
+        self.availableShips.append(
+            {shipType: stats}
+        )
+
+    def removeShip(self, shipType, stats):
+
+        for key in range(len(self.availableShips)):
+            myType, myStats = self.getAvailableShip(key)
+            if shipType == myType and stats == myStats:
+                del self.availableShips[key]
+                break
 
     def setPort(self, portX, portY):
         self.portX = portX

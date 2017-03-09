@@ -139,14 +139,16 @@ class Map:
         if c.entity is None:
             self.getCell(x, y).entity = e
             if e.canSee:
+                # TODO This does appear to be happening
                 e.calculateFov()
+                raise Exception
             return True
         return False
 
     ### Pirates hacks
     def addCity(self, x, y, portX, portY, name):
-        c = City(self, x, y, name, '#', Colors.black)
-        c.setPort(portX, portY)
+        c = City(self, x, y, name, portX, portY, '#', Colors.black)
+
         self.addEntity(c, x, y)
         self.getCell(portX, portY).isPort = True
 

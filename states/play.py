@@ -1,4 +1,5 @@
-from util import randfloat, degToRad
+from shipTypes import shipTypes
+from util import randfloat, degToRad, randint
 from math import sin, cos
 from Captain import Captain
 from City import City
@@ -20,42 +21,6 @@ __author__ = 'jripley'
 
 class PlayState(GameState):
     def init(self):
-        self.availableShips = [
-            {'Caravel': lambda: None},
-            {'Caravel': lambda: None},
-            {'Brig': lambda: None},
-            {'Caravel': lambda: None},
-            {'Galleon': lambda: None},
-            {'Caravel': lambda: None},
-            {'Ship o\'Line': lambda: None},
-            {'Frigate': lambda: None},
-            {'Caravel': lambda: None},
-            {'Caravel': lambda: None},
-            {'Caravel': lambda: None},
-            {'Ship o\'Line': lambda: None},
-            {'Frigate': lambda: None},
-            {'Sloop': lambda: None},
-            {'Schooner': lambda: None}
-        ]
-        from shipTypes import shipTypes
-        self.availableShipSpecs = [
-            shipTypes['Caravel'],
-            shipTypes['Caravel'],
-            shipTypes['Brig'],
-            shipTypes['Caravel'],
-            shipTypes['Galleon'],
-            shipTypes['Caravel'],
-            shipTypes['Ship o\'Line'],
-            shipTypes['Frigate'],
-            shipTypes['Caravel'],
-            shipTypes['Caravel'],
-            shipTypes['Caravel'],
-            shipTypes['Ship o\'Line'],
-            shipTypes['Frigate'],
-            shipTypes['Sloop'],
-            shipTypes['Schooner'],
-        ]
-
         self.currentCity = None
 
         self.setupView()
@@ -75,20 +40,21 @@ class PlayState(GameState):
     def beforeLoad(self):
         self.manager.updateUi(self)
         self.addView(self.introModal)
-        self.addHandler('intro', 60, self.doIntro)
+        self.addHandler('intro', 1, self.doIntro)
 
     def shipsUpdate(self):
         self.playerUpdate()
 
     def playerUpdate(self):
-        self.moveShip(self.player.ship)
+        if self.player.ship:
+            self.moveShip(self.player.ship)
 
     def moveShip(self, ship):
         if ship.anchored:
             return False
+
         dx = config.spf * cos(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectX
         dy = config.spf * sin(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectY
-
         oldX = ship.mapX
         oldY = ship.mapY
         ship.x += dx
@@ -112,10 +78,10 @@ class PlayState(GameState):
             ship.x = oldX
             ship.y = oldY
             return False
-
         self.map.removeEntity(ship, oldX, oldY)
         self.map.addEntity(ship, ship.mapX, ship.mapY)
         self.mapElement.setDirty(True)
+
         ship.calculateFovMap()
         neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
         for nx, ny in neighbours:
@@ -182,21 +148,27 @@ class PlayState(GameState):
         self.headingDial.setVal(self.player.ship.heading)
         self.headingLabel.setLabel(str(self.player.ship.heading))
 
-    def enterCity(self, captain, city):
-
-        self.map.removeEntity(captain.ship, captain.ship.mapX, captain.ship.mapY)
-
+    def enterCity(self, player, city):
+        if player.ship:
+            self.map.removeEntity(player.ship, player.ship.mapX, player.ship.mapY)
         self.currentCity = city
+        player.setCity(city)
         self.addView(self.cityModal)
 
         city.setPrices()
         self.hideShops()
         self.disableShops()
         self.cityShowShop('generalStore')
+
+        self.shipyardMenu.selected = 0
+
         self.updateCityUI()
         print 'PORT {},{}'.format(city.portX, city.portY)
 
     def castOff(self, ship):
+        if not self.player.ship:
+            return False
+
         self.removeView()
         ship.anchored = True
         ship.heading = 0.0
@@ -229,14 +201,32 @@ class PlayState(GameState):
         self.updateStoreItems()
         self.updateBrothelValues()
         self.updateTavernUI()
+        self.updateShipyardUI()
+        if not self.player.ship:
+            self.dockFrame.disable()
+        else:
+            self.dockFrame.enable()
 
+    def updateShipyardUI(self):
+        # Repairs
+        if self.player.ship:
+            self.repairHullTotal = self.player.ship.stats['hullDamage']
+            self.repairSailTotal = self.player.ship.stats['sailDamage']
 
+        # Buy sell ships
+        self.shipyardMenu.setItems(self.currentCity.availableShips)
+        self.updateShipStats()
+        
 
     def updateBrothelValues(self):
         c = self.currentCity
+        if self.player.ship:
+            crew = self.player.ship.crew + 1
+        else:
+            crew = 1
         self.brothelRateVal.setLabel(str(c.brothelRate))
-        self.brothelCrewVal.setLabel(str(self.player.ship.crew))
-        self.brothelCost = c.brothelRate * (self.player.ship.crew + 1)
+        self.brothelCrewVal.setLabel(str(crew))
+        self.brothelCost = c.brothelRate * (crew)
         self.brothelCostVal.setLabel(str(self.brothelCost))
         self.brothelGoldVal.setLabel(str(self.player.gold))
         self.brothelMoraleVal.setLabel(str(self.player.morale))
@@ -251,19 +241,19 @@ class PlayState(GameState):
         self.storeTownCloth.setLabel(str(cityGoods['cloth']).zfill(3))
         self.storeTownCoffee.setLabel(str(cityGoods['coffee']).zfill(3))
         self.storeTownSpice.setLabel(str(cityGoods['spice']).zfill(3))
-
-        shipGoods = self.player.ship.goods
-        self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
-        self.storeShipFood.setLabel(str(shipGoods['food']).zfill(4))
-        self.storeShipRum.setLabel(str(shipGoods['rum']).zfill(3))
-        self.storeShipWood.setLabel(str(shipGoods['wood']).zfill(3))
-        self.storeShipCloth.setLabel(str(shipGoods['cloth']).zfill(3))
-        self.storeShipCoffee.setLabel(str(shipGoods['coffee']).zfill(3))
-        self.storeShipSpice.setLabel(str(shipGoods['spice']).zfill(3))
-
         if self.player.ship:
+            shipGoods = self.player.ship.goods
+            print "Ship goods {}".format(shipGoods)
+            self.storeShipGold.setLabel(str(self.player.gold).zfill(5))
+            self.storeShipFood.setLabel(str(shipGoods['food']).zfill(4))
+            self.storeShipRum.setLabel(str(shipGoods['rum']).zfill(3))
+            self.storeShipWood.setLabel(str(shipGoods['wood']).zfill(3))
+            self.storeShipCloth.setLabel(str(shipGoods['cloth']).zfill(3))
+            self.storeShipCoffee.setLabel(str(shipGoods['coffee']).zfill(3))
+            self.storeShipSpice.setLabel(str(shipGoods['spice']).zfill(3))
+
             inHold = self.player.ship.inHold
-            shipSize = self.player.ship.size
+            shipSize = self.player.ship.stats['size']
         else:
             inHold = 0
             shipSize = 0
@@ -582,10 +572,10 @@ class PlayState(GameState):
         self.shipSaleFrame = self.shipyardFrame.addElement(Elements.Frame(1, 9, 27, 17, 'SHIPS for SALE'))
         self.shipSaleHelp = self.shipSaleFrame.addElement(Elements.Label(1, self.shipSaleFrame.height - 1,
                                                                          "Up/Dn-Select | Enter buys"))
-        self.shipList = self.shipSaleFrame.addElement(Elements.Menu(1, 2, 12, 13, self.availableShips))
+        self.shipyardMenu = self.shipSaleFrame.addElement(Elements.Menu(1, 2, 12, 13))
+        self.shipyardMenu.setWrap(False)
         self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 2, 13, 13, "Ship Specs"))
-        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 2, 11, 8)) \
-            .setItems(self.availableShipSpecs[1])
+        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 2, 11, 8))
         self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 9, "Damage"))
         self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 10, 11, 2)).setItems({
             'hull': 85,
@@ -666,7 +656,7 @@ class PlayState(GameState):
         # Shipyard colors
         self.shipSpecFrame.setDefaultForeground(Colors.lighter_sepia, True)
         self.shipSaleHelp.setDefaultForeground(Colors.dark_sepia)
-        self.shipList.setDefaultForeground(Colors.lighter_sepia)
+        self.shipyardMenu.setDefaultForeground(Colors.lighter_sepia)
         self.damageLabel.setDefaultForeground(Colors.darker_red)
         self.damageSpecs.setDefaultForeground(Colors.red)
 
@@ -926,13 +916,13 @@ class PlayState(GameState):
                 'key': Keys.Left,
                 'ch': 'a',
                 'fn': lambda:
-                    self.buyStuff(self.storeMenu.selected)
+                    self.buyGoods(self.storeMenu.selected)
             },
             'buy2': {
                 'key': Keys.NumPad4,
                 'ch': 'A',
                 'fn': lambda:
-                    self.buyStuff(self.storeMenu.selected)
+                    self.buyGoods(self.storeMenu.selected)
             },
             'sell': {
                 'key': Keys.Right,
@@ -947,22 +937,83 @@ class PlayState(GameState):
                     self.sellStuff(self.storeMenu.selected)
             },
         })
-    
-    def buyStuff(self, index):
+        self.shipyardMenu.setKeyInputs({
+            'menuUp': {
+                'key': Keys.Up,
+                'ch': 'w',
+                'fn': lambda: self.shipyardMenu.selectUp() and
+                      self.updateShipStats()
+            },
+            'menuUp2': {
+                'key': Keys.NumPad8,
+                'ch': 'W',
+                'fn': lambda: self.shipyardMenu.selectUp() and
+                      self.updateShipStats()
+            },
+            'menuDn': {
+                'key': Keys.Down,
+                'ch': 's',
+                'fn': lambda: self.shipyardMenu.selectDown() and
+                      self.updateShipStats()
+            },
+            'menuDn2': {
+                'key': Keys.NumPad2,
+                'ch': 'S',
+                'fn': lambda: self.shipyardMenu.selectDown() and
+                      self.updateShipStats()
+            },
+            'buyShip': {
+                'key': Keys.Enter,
+                'ch': None,
+                'fn': self.buyShip
 
+            },
+            'buyShip2': {
+                'key': Keys.NumPadEnter,
+                'ch': None,
+                'fn': self.buyShip
+            },
+
+        })
+
+    def updateShipStats(self):
+        if not len(self.currentCity.availableShips):
+            return
+        shipType, shipStats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
+        stats = {}
+        if shipStats:
+            self.damageSpecs.setItems({
+                'hull': shipStats['hullDamage'],
+                'sail': shipStats['sailDamage']
+            })
+            for k in shipStats.keys():
+                if k not in ['hullDamage', 'sailDamage', 'color']:
+                    stats[k] = shipStats[k]
+                if k == "price":
+                    stats[k] = Ship.getBuyPrice(shipStats)
+            self.shipSpecs.setItems(stats)
+
+    def buyShip(self):
+        shipType, stats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
+        if self.player.buyShip(shipType, stats):
+            self.shipyardMenu.selected = 0
+            self.updateCityUI()
+
+
+    def buyGoods(self, index):
+
+        if not self.player.ship:
+            return
         itemName = self.getItemByIndex(index)
 
         price = self.currentCity.getBuyPrice(itemName)
         if self.player.gold < price:
-            print "can't afford{}/{}".format(self.player.gold, price)
             return
         if self.currentCity.goods[itemName] < 1:
-            print "non in city"
+            return
+        if not self.player.ship.addGoods(itemName):
             return
 
-        if not self.player.ship.addGoods(itemName):
-            print "won't fit on ship"
-            return
         self.currentCity.goods[itemName] -= 1
         self.player.gold -= price
 
@@ -977,7 +1028,7 @@ class PlayState(GameState):
             return
         self.currentCity.goods[itemName] += 1
         self.player.gold += price
-
+        self.currentCity.gold -= price
         self.updateCityUI()
 
     @staticmethod
@@ -997,10 +1048,16 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def updateTavernUI(self):
+        minCrew = "n / a"
+        maxCrew = "n / a"
+        if self.player.ship:
+            minCrew = self.player.ship.stats['minCrew']
+            maxCrew = self.player.ship.stats['maxCrew']
+
         tavernStats = {
             'Morale': self.player.morale,
-            'MinCrew': self.player.ship.minCrew,
-            'MaxCrew': self.player.ship.maxCrew,
+            'MinCrew': minCrew,
+            'MaxCrew': maxCrew,
             'Sailors': self.currentCity.crewAvailable,
             'Gold': self.player.gold
         }
@@ -1048,7 +1105,6 @@ class PlayState(GameState):
         modalY = self.mapElement.height / 2 - 3
         modalW = len(title) + 2
         modalH = 6
-        print "MODAL: {},{} {},{}".format(modalX, modalY, modalW, modalH)
         modal = View(modalW, modalH, modalX, modalY)
         self.addView(modal)
 
@@ -1123,6 +1179,11 @@ class PlayState(GameState):
         cities = self.map.getMajorCities()
 
         startingCity = cities[index]
+
+        self.spawnShipAtCity(startingCity, 'Caravel')
+        self.spawnShipAtCity(startingCity, 'Caravel')
+        self.spawnShipAtCity(startingCity, 'Caravel')
+
         print "Starting at ", startingCity
         # Close intro modal
         self.removeView()
@@ -1131,22 +1192,26 @@ class PlayState(GameState):
 
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
-        playerShip = Ship(self.map, 'Caravel', startingCity.portX, startingCity.portY, Colors.lighter_grey, isPlayer=True)
         # TODO Let the player pick from a few randomly generated captains
         self.player = Captain()
-        self.player.setShip(playerShip)
         self.player.gold = 700
         self.mapElement.setPlayer(self.player)
 
         self.enableGameHandlers()
         self.map.trigger('enterCity', self.player, startingCity)
 
+    def spawnShipAtCity(self, city, type=None):
+        types = shipTypes.keys()
+        if type is None:
+            type = types[randint(len(types) - 1)]
+        if type not in types:
+            raise KeyError("Can't find ship type[{}]".format(type))
+        city.addShip(type)
+
     def enableGameHandlers(self):
         # Enable our gameplay handlers
         self.enableHandler('windUpdate')
         self.enableHandler('shipsUpdate')
-
-        self.updateAnchorUI()
 
     def clearCityLabel(self):
         if self.cityLabel is not None:

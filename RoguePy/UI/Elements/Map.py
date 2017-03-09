@@ -83,18 +83,21 @@ class Map(Element):
     return x - self._offsetX, y - self._offsetY
   
   def draw(self):
+
     for sy in range(self.height):
       for sx in range(self.width):
         x = sx + self._offsetX
         y = sy + self._offsetY
         if (x >= 0 and x < self._map.width and y >= 0 and y < self._map.height):
           c = self._map.getCell(x, y)
-          if not c or (not c.seen and self.showFog):
-              continue
-          if self.isStatic or (self.player and self.player.inSight(x, y)) or not self.showFog:
-              cv = self.cellToView(c, True)
+          if not c:
+            continue
+          if (not c.seen and self.showFog) or self.isStatic:
+            continue
+          if (self.player and self.player.ship.inSight(x, y)) or not self.showFog:
+            cv = self.cellToView(c, True)
           else:
-              cv = self.cellToView(c)
+            cv = self.cellToView(c)
           libtcod.console_put_char_ex(self.console, sx, sy, cv.char, cv.fg, cv.bg)
 
     self.setDirty(False)

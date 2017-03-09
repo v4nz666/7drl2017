@@ -1,4 +1,4 @@
-
+from RoguePy.UI import Colors
 shipTypes = {
     "Ship o'Line": {
         'maxSpeed': 25,
@@ -6,7 +6,10 @@ shipTypes = {
         'minCrew': 30,
         'maxCrew': 200,
         'size': 750,
-        'price': 20000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 20000,
+        'color': Colors.black
     },
     "Galleon": {
         'maxSpeed': 20,
@@ -14,7 +17,10 @@ shipTypes = {
         'minCrew': 30,
         'maxCrew': 200,
         'size': 650,
-        'price': 15000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 15000,
+        'color': Colors.brass
     },
     "Brig": {
         'maxSpeed': 30,
@@ -22,7 +28,10 @@ shipTypes = {
         'minCrew': 25,
         'maxCrew': 150,
         'size': 550,
-        'price': 10000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 10000,
+        'color': Colors.darkest_grey
     },
     "Brigantine": {
         'maxSpeed': 35,
@@ -30,7 +39,10 @@ shipTypes = {
         'minCrew': 25,
         'maxCrew': 125,
         'size': 500,
-        'price': 8000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 8000,
+        'color': Colors.darkest_sepia
     },
     "Frigate": {
         'maxSpeed': 25,
@@ -38,7 +50,10 @@ shipTypes = {
         'minCrew': 20,
         'maxCrew': 50,
         'size': 300,
-        'price': 5000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 5000,
+        'color': Colors.darker_grey
     },
     "Clipper": {
         'maxSpeed': 45,
@@ -46,7 +61,10 @@ shipTypes = {
         'minCrew': 20,
         'maxCrew': 45,
         'size': 250,
-        'price': 3000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 3000,
+        'color': Colors.darker_blue
     },
     "Schooner": {
         'maxSpeed': 40,
@@ -54,7 +72,10 @@ shipTypes = {
         'minCrew': 15,
         'maxCrew': 30,
         'size': 150,
-        'price': 1000
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 1000,
+        'color': Colors.dark_blue
     },
     "Sloop": {
         'maxSpeed': 30,
@@ -62,7 +83,10 @@ shipTypes = {
         'minCrew': 5,
         'maxCrew': 20,
         'size': 150,
-        'price': 500
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 500,
+        'color': Colors.light_grey
     },
     "Caravel": {
         'maxSpeed': 25,
@@ -70,6 +94,9 @@ shipTypes = {
         'minCrew': 5,
         'maxCrew': 15,
         'size': 100,
-        'price': 450
+        'hullDamage': 0,
+        'sailDamage': 0,
+        'price': 450,
+        'color': Colors.white
     }
 }

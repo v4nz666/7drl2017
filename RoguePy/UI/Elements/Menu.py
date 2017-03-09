@@ -28,6 +28,7 @@ class Menu(List):
       fn = i[label]
 
       #if self.align == CENTER:
+      print label
       _x = (self.width - len(label)) / 2
       #elif self.align == LEFT:
       #x = 0

@@ -1,3 +1,4 @@
+from Ship import Ship
 from util import randint
 
 
@@ -15,9 +16,12 @@ class Captain(object):
         self.gold = 0
         self.lastCity = None
 
+    def setCity(self, city):
+        self.lastCity = city
+
     def setShip(self, ship):
+        print "Setting ship with goods{}".format(ship.goods)
         self.ship = ship
-        self.inSight = ship.inSight
 
     @property
     def morale(self):
@@ -26,4 +30,47 @@ class Captain(object):
     def morale(self, val):
         self.__morale = min(100, max(val, 0))
 
+    def buyShip(self, shipType, stats):
+        newShipValue = Ship.getBuyPrice(stats)
+        cost = newShipValue
+        if self.ship:
+            cost -= Ship.getSellPrice(self.ship.stats)
+
+        print "Gold[{}] cost[{}]".format(self.gold, cost)
+        if self.gold < cost:
+            return False
+
+        ship = Ship(self.lastCity.map, shipType, self.lastCity.portX, self.lastCity.portY, True, stats)
+        print "immediate goods {}".format(ship.goods)
+        ship.calculateFovMap()
+
+        if self.ship:
+            print "selling goods {}".format(self.ship.goods)
+            for item in self.ship.goods.keys():
+                count = self.ship.goods[item]
+                while count:
+                    # If we can't take it on the new ship,
+                    if self.ship.addGoods(item):
+                        # we'll sell it
+                        self.gold += self.lastCity.prices[item][1]
+                        self.ship.takeGoods(item)
+                        count -= 1
+            self.sellShip()
+        self.gold -= newShipValue
+        print "new gold {}".format(self.gold)
+        self.lastCity.removeShip(shipType, stats)
+
+        self.setShip(ship)
+        print "Bought [{}] ship with stats {}. Goods{}".format(shipType, stats, self.ship.goods)
+
+        return True
+
+    def sellShip(self):
+        value = Ship.getSellPrice(self.ship.stats)
+        print "Selling ship for {}".format(value)
+        self.gold += value
+        print "Gold after sale {}".format(self.gold)
+        self.lastCity.addShip(self.ship.name, self.ship.stats)
+        self.ship.map.removeEntity(self.ship, self.ship.mapX, self.ship.mapY)
+        self.ship = None
 

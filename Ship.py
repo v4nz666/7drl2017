@@ -7,21 +7,22 @@ from shipTypes import shipTypes
 
 
 class Ship(Entity):
-    def __init__(self, map, type, x, y, color, isPlayer=False):
+    def __init__(self, map, type, x, y, isPlayer=False, stats=None):
         self.name = type
-        # for attr, value in shipTypes[type].iteritems():
-        #     setattr(self, attr, value)
+
+        if stats is None:
+            self.stats = shipTypes[type]
+        else:
+            self.stats = stats
+
         self.ch = '@'
+
         self.anchored = True
-        self.hullDamage = 0
-        self.sailDamage = 0
         self.heading = 0.0
         self.headingRad = 0.0
         self.sails = 0
         self.speed = 0.0
         self.crew = 0
-
-        self.stats = type
 
         self.canSee = True
         self.viewRadius = 8
@@ -29,21 +30,9 @@ class Ship(Entity):
         self.x = x
         self.y = y
 
-        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, color)
+        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'])
 
         self.isPlayer = isPlayer
-
-        # To be overridden by shipTypes
-        self.maxSpeed = 0
-        self.turnSpeed = 0
-        self.guns = 0
-        self.minCrew = 0
-        self.maxCrew = 0
-        self.size = 0
-        self.price = 0
-
-        for attr, value in shipTypes[type].iteritems():
-            setattr(self, attr, value)
 
         self.goods = {
             'food': 0,
@@ -59,13 +48,32 @@ class Ship(Entity):
         self._initFovMap()
         self.calculateFovMap()
 
+    @staticmethod
+    def getBuyPrice(stats):
+        return int(config.economy['buyMul'] * Ship._getValue(stats))
+
+    @staticmethod
+    def getSellPrice(stats):
+        return int(config.economy['sellMul'] * Ship._getValue(stats))
+
+    @staticmethod
+    def _getValue(stats=None):
+        if stats is None:
+            stats = shipTypes[type]
+        value = stats['price']
+        if stats['hullDamage'] > 0:
+            value -= int(stats['hullDamage'] / 100.0 * stats['price'] * 2/3)
+
+        if stats['sailDamage'] > 0:
+            value -= int(stats['sailDamage'] / 100.0 * stats['price'] * 1/3)
+        return value
+
     def addGoods(self, item):
         if item not in self.goods:
             return False
-
         self.goods[item] += 1
         self.inHold += 1
-        if self.inHold > self.size:
+        if self.inHold > self.stats['size']:
             self.goods[item] -= 1
             self.inHold -= 1
             return False
@@ -76,9 +84,13 @@ class Ship(Entity):
             return False
         if self.goods[item] < 1:
             return False
-
+        print "selling {}".format(item)
         self.goods[item] -= 1
+        print " left {}".format(self.goods[item])
+
         self.inHold -= 1
+        print " Total in hold {}".format(self.inHold)
+        print " Goods:{}".format(self.goods)
         return True
 
     @property
@@ -113,6 +125,7 @@ class Ship(Entity):
         libtcod.map_compute_fov(
             self.fovMap, self.mapX, self.mapY, self.viewRadius, True, libtcod.FOV_SHADOW
         )
+
         for _y in range(-self.viewRadius, self.viewRadius + 1):
             for _x in range(-self.viewRadius, self.viewRadius + 1):
                 if self.isPlayer:
@@ -129,7 +142,7 @@ class Ship(Entity):
         newSails = max(min(self.sails + step, config.maxSails), 0)
         if newSails != self.sails:
             self.sails = newSails
-            self.speed = config.sailStep * self.sails * self.maxSpeed
+            self.speed = config.sailStep * self.sails * self.stats['maxSpeed']
 
     def headingAdjust(self, val):
         self.heading += val
