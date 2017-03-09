@@ -16,13 +16,16 @@ class Label(Element):
     super(Label, self).__init__(x, y, w, 1)
     self._label = label
   
-  def setLabel(self, label):
+  def setLabel(self, label, fill=False):
+    label = str(label)
     if self._label == label:
-      pass
+      return self
 
     if len(label) > self.width:
       label = label[self.width:]
 
+    if fill:
+      label = label.zfill(self.width)
     self._label = label
     self.setDirty()
     return self

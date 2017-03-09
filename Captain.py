@@ -7,6 +7,7 @@ class Captain(object):
         # TODO replace with name generation
         self.name = "Captain"
         self.morale = 50
+        self.rep = 0
         self.ship = ship
         self.skills = {
             'nav': randint(10),

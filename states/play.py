@@ -34,13 +34,43 @@ class PlayState(GameState):
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
         self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
         self.addHandler('shipsUpdate', 1, self.shipsUpdate)
+        self.addHandler('infoPanelUpdate', 1, self.infoPanelUpdate)
 
         self.disableHandler('shipsUpdate')
+        self.disableHandler('infoPanelUpdate')
 
     def beforeLoad(self):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
+    def infoPanelUpdate(self):
+        self.goldLabel.setLabel(str(self.player.gold).zfill(5))
+        self.repLabel.setLabel(self.player.rep)
+
+        for k in self.player.skills.keys():
+            getattr(self, "{}Label".format(k)).setLabel(str(self.player.skills[k]).zfill(3))
+
+        if self.player.ship:
+            crewStr = "{}({})".format(self.player.ship.crew, self.player.ship.stats['maxCrew'])
+
+            crewClr = Colors.dark_green
+            if self.player.ship.crew < self.player.ship.stats['minCrew']:
+                crewClr = Colors.dark_red
+
+            self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
+            self.moraleLabel.setLabel(self.player.morale, True)\
+                .setDefaultForeground(getColor(100 - self.player.morale))
+            self.hullDmgLabel.setLabel(self.player.ship.stats['hullDamage'], True)\
+                .setDefaultForeground(getColor(self.player.ship.stats['hullDamage']))
+            self.sailDmgLabel.setLabel(self.player.ship.stats['sailDamage'], True)\
+                .setDefaultForeground(getColor(self.player.ship.stats['sailDamage']))
+
+            self.goodsDict.setItems(self.player.ship.goods)
+
+            self.cannonballCountLabel.setLabel(self.player.ship.cannonballs, True)
+            self.chainshotCountLabel.setLabel(self.player.ship.chainshot, True)
+
 
     def shipsUpdate(self):
         self.playerUpdate()
@@ -250,7 +280,6 @@ class PlayState(GameState):
         # Buy sell ships
         self.shipyardMenu.setItems(self.currentCity.availableShips)
         self.updateShipStats()
-        
 
     def updateBrothelValues(self):
         c = self.currentCity
@@ -431,58 +460,40 @@ class PlayState(GameState):
 
         self.infoPanel.addElement(Elements.Label(3, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
         self.infoPanel.addElement(Elements.Label(1, 14, "Nav")).setDefaultForeground(Colors.lighter_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "0".zfill(3))). \
+        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "000")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 15, "Gun")).setDefaultForeground(Colors.lighter_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "0".zfill(3))). \
+        self.gunLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "000")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 16, "Char")).setDefaultForeground(Colors.lighter_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "0".zfill(3))). \
+        self.charismaLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "000")). \
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 18, "SHIP")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
-        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "000")). \
-            setDefaultForeground(Colors.azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 19, "({})".format(100))). \
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 19, "     ")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
-        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "0".zfill(3))). \
+        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "   ")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 21, "Hull Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "0".zfill(3))). \
+        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "   ")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 22, "Sail Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.SailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "0".zfill(3))). \
+        self.sailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "   ")). \
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 24, "AMMO")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
-        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "0".zfill(3))). \
+        self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "   ")). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 26, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
-        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "0".zfill(3))). \
+        self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "   ")). \
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 28, "CARGO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 29, "Food")).setDefaultForeground(Colors.lighter_azure)
-        self.foodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 29, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 30, "Rum")).setDefaultForeground(Colors.lighter_azure)
-        self.rumCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 30, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 31, "Wood")).setDefaultForeground(Colors.lighter_azure)
-        self.woodCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 31, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 32, "Cloth")).setDefaultForeground(Colors.lighter_azure)
-        self.clothCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 32, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 33, "Coffee")).setDefaultForeground(Colors.lighter_azure)
-        self.coffeeCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 33, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 34, "Spice")).setDefaultForeground(Colors.lighter_azure)
-        self.spiceCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 6, 34, "0".zfill(5))). \
-            setDefaultForeground(Colors.azure)
+        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6))\
+            .setDefaultForeground(Colors.lighter_azure)
 
         self.helpPanel = self.view.addElement(Elements.Frame(55, 35, 20, 15, "Help"))
         self.helpPanel.addElement(Elements.Label(1, 1, "A/D")).setDefaultForeground(Colors.dark_green)
@@ -698,7 +709,6 @@ class PlayState(GameState):
         self.sellPrice.setDefaultForeground(Colors.gold)
 
         self.inHoldVal.setDefaultForeground(Colors.lighter_sepia)
-        # holdSlash.setDefaultForeground(Colors.lighter_sepia)
         self.inHoldTotal.setDefaultForeground(Colors.lighter_sepia)
         buyDollar.setDefaultForeground(Colors.gold)
         sellDollar.setDefaultForeground(Colors.gold)
@@ -770,10 +780,17 @@ class PlayState(GameState):
         self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
             setDefaultForeground(Colors.dark_red)
 
-
     def setupInputs(self):
+        def killKrew(self):
+            self.player.ship.crew -= 1
         # Inputs. =================================================================================
         self.view.setKeyInputs({
+            #TODO remove
+            'KILL': {
+                'key': None,
+                'ch': 'K',
+                'fn': lambda: killKrew(self)
+            },
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1105,6 +1122,7 @@ class PlayState(GameState):
         rate = self.currentCity.hireRate
         if self.player.gold >= rate and self.currentCity.hireCrewMember():
             self.player.ship.crew += 1
+            self.player.gold -= rate
             self.updateCityUI()
             return True
         else:
@@ -1233,9 +1251,10 @@ class PlayState(GameState):
         return['food', 'rum', 'wood', 'cloth', 'coffee', 'spice'][index]
 
     def cityShowShop(self, name):
-        self.disableShops()
         element = getattr(self, '{}Frame'.format(name))
-        element.enable()
+        if element.visible:
+            self.disableShops()
+            element.enable()
 
     def brothel(self):
         cost = self.currentCity.brothelRate * (self.player.ship.crew + 1)
@@ -1414,6 +1433,7 @@ class PlayState(GameState):
         # Enable our gameplay handlers
         self.enableHandler('windUpdate')
         self.enableHandler('shipsUpdate')
+        self.enableHandler('infoPanelUpdate')
 
     def clearCityLabel(self):
         if self.cityLabel is not None:
