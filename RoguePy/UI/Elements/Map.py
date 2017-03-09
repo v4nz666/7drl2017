@@ -92,9 +92,9 @@ class Map(Element):
           c = self._map.getCell(x, y)
           if not c:
             continue
-          if (not c.seen and self.showFog) or self.isStatic:
+          if not c.seen and self.showFog:
             continue
-          if (self.player and self.player.ship.inSight(x, y)) or not self.showFog:
+          if (self.player and self.player.ship.inSight(x, y)) or not self.showFog or self.isStatic:
             cv = self.cellToView(c, True)
           else:
             cv = self.cellToView(c)

@@ -30,8 +30,9 @@ class City(Entity):
 
         self.availableShips = []
         self.availableShipStats = []
-
         self.setAvailableShips()
+
+        self.news = []
 
         self.crewAvailable = randint(20, 5) * self.size
 

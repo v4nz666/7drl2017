@@ -286,7 +286,7 @@ class PlayState(GameState):
         self.updateBrothelValues()
         self.updateTavernUI()
         self.updateShipyardUI()
-        if not self.player.ship:
+        if not self.player.ship or self.player.ship.crew < self.player.ship.stats['minCrew']:
             self.dockFrame.disable()
         else:
             self.dockFrame.enable()
@@ -323,9 +323,9 @@ class PlayState(GameState):
         else:
             balls = str(self.player.ship.cannonballs)
             chain = str(self.player.ship.chainshot)
-        print "balls, chain {}, {}".format(balls, chain)
-        self.cannonballOnShip.setLabel(balls)
-        self.chainshotOnShip.setLabel(chain)
+
+        self.cannonballOnShip.setLabel(balls, True)
+        self.chainshotOnShip.setLabel(chain, True)
 
         # Buy sell ships
         self.shipyardMenu.setItems(self.currentCity.availableShips)
@@ -1451,9 +1451,10 @@ class PlayState(GameState):
 
         startingCity = cities[index]
 
-        self.spawnShipAtCity(startingCity, 'Caravel')
-        self.spawnShipAtCity(startingCity, 'Caravel')
-        self.spawnShipAtCity(startingCity, 'Caravel')
+        types = ['Caravel', 'Sloop']
+        for i in range(randint(3)):
+            shipType = types[randint(1)]
+            self.spawnShipAtCity(startingCity, shipType)
 
         print "Starting at ", startingCity
         # Close intro modal
@@ -1479,8 +1480,6 @@ class PlayState(GameState):
         city.addShip(type)
 
     def enableGameHandlers(self):
-        # Enable our gameplay handlers
-
         self.enableHandler('daysAtSea')
         self.enableHandler('foodUpdate')
         self.enableHandler('rumUpdate')
@@ -1488,13 +1487,11 @@ class PlayState(GameState):
         self.enableHandler('infoPanelUpdate')
 
     def disableGameHandlers(self):
-        # disable our gameplay handlers
-    
+        self.disableHandler('daysAtSea')
         self.disableHandler('foodUpdate')
         self.disableHandler('rumUpdate')
         self.disableHandler('shipsUpdate')
         self.disableHandler('infoPanelUpdate')
-    
     
     def clearCityLabel(self):
         if self.cityLabel is not None:
