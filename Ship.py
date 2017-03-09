@@ -24,6 +24,9 @@ class Ship(Entity):
         self.speed = 0.0
         self.crew = 0
 
+        self.cannonballs = 0
+        self.chainshot = 0
+
         self.canSee = True
         self.viewRadius = 8
 
@@ -55,6 +58,20 @@ class Ship(Entity):
     @staticmethod
     def getSellPrice(stats):
         return int(config.economy['sellMul'] * Ship._getValue(stats))
+
+    def addCannonballs(self, count):
+        if self.inHold + count > self.stats['size']:
+            return False
+        self.cannonballs += count
+        self.inHold += count
+        return True
+
+    def addChainshot(self, count):
+        if self.inHold + count > self.stats['size']:
+            return False
+        self.chainshot += count
+        self.inHold += count
+        return True
 
     @staticmethod
     def _getValue(stats=None):

@@ -219,7 +219,6 @@ class PlayState(GameState):
             self.repairHullCurrent.setLabel(str(hullDamage)).setDefaultForeground(hullColor)
             self.repairSailCurrent.setLabel(str(sailDamage)).setDefaultForeground(sailColor)
 
-
             if not self.player.ship.goods['wood']:
                 self.notEnoughWood.setDefaultForeground(Colors.darker_red)
             else:
@@ -234,6 +233,15 @@ class PlayState(GameState):
 
         # Ammo
         self.ammoPriceLabel.setLabel("${}/{}" .format(self.currentCity.ammoRate, config.shipyard['ammoBuyCount']))
+        if not self.player.ship:
+            balls = "n/a"
+            chain = "n/a"
+        else:
+            balls = str(self.player.ship.cannonballs)
+            chain = str(self.player.ship.chainshot)
+        print "balls, chain {}, {}".format(balls, chain)
+        self.cannonballOnShip.setLabel(balls)
+        self.chainshotOnShip.setLabel(chain)
 
         # Buy sell ships
         self.shipyardMenu.setItems(self.currentCity.availableShips)
@@ -586,12 +594,12 @@ class PlayState(GameState):
         # Ammo
         self.ammoFrame = self.shipyardFrame.addElement(Elements.Frame(14, 1, 14, 8, 'AMMO'))
         self.ammoPriceLabel = self.ammoFrame.addElement(Elements.Label(3, 6, "$20/10"))
-        self.cannonballLabel = self.ammoFrame.addElement(Elements.Label(1, 2, "Ca(n)nonball"))
+        self.cannonballLabel = self.ammoFrame.addElement(Elements.Label(1, 2, "C(a)nnonball"))
         self.cbOnShipLabel = self.ammoFrame.addElement(Elements.Label(1, 3, "on ship"))
-        self.cannonballOnShip = self.ammoFrame.addElement(Elements.Label(8, 3, "!   !"))
-        self.chainshotLabel = self.ammoFrame.addElement(Elements.Label(1, 4, "C(h)ainshot"))
+        self.cannonballOnShip = self.ammoFrame.addElement(Elements.Label(10, 3, "   "))
+        self.chainshotLabel = self.ammoFrame.addElement(Elements.Label(1, 4, "Cha(i)nshot"))
         self.csOnShipLabel = self.ammoFrame.addElement(Elements.Label(1, 5, "on ship"))
-        self.chainshotOnShip = self.ammoFrame.addElement(Elements.Label(8, 5, "!   !"))
+        self.chainshotOnShip = self.ammoFrame.addElement(Elements.Label(10, 5, "   "))
         # Ship sales
         self.shipSaleFrame = self.shipyardFrame.addElement(Elements.Frame(1, 9, 27, 17, 'SHIPS for SALE'))
         self.shipSaleHelp = self.shipSaleFrame.addElement(Elements.Label(1, self.shipSaleFrame.height - 1,
@@ -967,25 +975,25 @@ class PlayState(GameState):
                 'key': Keys.Up,
                 'ch': 'w',
                 'fn': lambda: self.shipyardMenu.selectUp() and
-                      self.updateShipStats()
+                              self.updateShipStats()
             },
             'menuUp2': {
                 'key': Keys.NumPad8,
                 'ch': 'W',
                 'fn': lambda: self.shipyardMenu.selectUp() and
-                      self.updateShipStats()
+                              self.updateShipStats()
             },
             'menuDn': {
                 'key': Keys.Down,
                 'ch': 's',
                 'fn': lambda: self.shipyardMenu.selectDown() and
-                      self.updateShipStats()
+                              self.updateShipStats()
             },
             'menuDn2': {
                 'key': Keys.NumPad2,
                 'ch': 'S',
                 'fn': lambda: self.shipyardMenu.selectDown() and
-                      self.updateShipStats()
+                              self.updateShipStats()
             },
             'buyShip': {
                 'key': Keys.Enter,
@@ -1018,8 +1026,75 @@ class PlayState(GameState):
                 'key': None,
                 'ch': 'S',
                 'fn': self.repairSails
+            },
+            'buyCannon': {
+                'key': None,
+                'ch': 'a',
+                'fn': self.buyCannon
+
+            },
+            'buyCannon2': {
+                'key': None,
+                'ch': 'A',
+                'fn': self.buyCannon
+
+            },
+            'buyChain': {
+                'key': None,
+                'ch': 'i',
+                'fn': self.buyChain
+            },
+            'buyChain2': {
+                'key': None,
+                'ch': 'I',
+                'fn': self.buyChain
             }
+
         })
+
+
+        # self.tavernFrame.setKeyInputs({
+        #     'hire': {
+        #         'key': None,
+        #         'ch': 's',
+        #         'fn': self.repairSails
+        #
+        #     },
+        #     'hire2': {
+        #         'key': None,
+        #         'ch': 'S',
+        #         'fn': self.repairSails
+        #     },
+        #     'buyRound': {
+        #         'key': None,
+        #         'ch': 'a',
+        #         'fn': self.buyCannon
+        #
+        #     },
+        #     'buyRound2': {
+        #         'key': None,
+        #         'ch': 'S',
+        #         'fn': self.buyChain
+        #     }
+        # })
+
+    def buyCannon(self):
+        if not self.player.ship or not self.player.ship.addCannonballs(config.shipyard['ammoBuyCount']):
+            print "Couldn't buy"
+            return False
+        print "bought balls"
+        self.player.gold -= self.currentCity.ammoRate
+        self.updateCityUI()
+
+
+    def buyChain(self):
+        if not self.player.ship or not self.player.ship.addChainshot(config.shipyard['ammoBuyCount']):
+            print "couldn't buy"
+            return False
+        print "bought chain"
+        self.player.gold -= self.currentCity.ammoRate
+        self.updateCityUI()
+
 
     def repairHull(self):
         if not self.player.ship:
