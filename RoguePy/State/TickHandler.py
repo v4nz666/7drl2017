@@ -1,8 +1,8 @@
 class TickHandler:
-  def __init__(self, interval, fn):
+  def __init__(self, interval, fn, enabled):
     self.interval = interval
     self.fn = fn
-    self.enabled = True
+    self.enabled = enabled
 
   def run(self):
     self.fn()

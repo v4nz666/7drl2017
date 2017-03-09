@@ -33,16 +33,61 @@ class PlayState(GameState):
 
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
         self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
-        self.addHandler('shipsUpdate', 1, self.shipsUpdate)
-        self.addHandler('infoPanelUpdate', 1, self.infoPanelUpdate)
+        self.addHandler('shipsUpdate', 1, self.shipsUpdate, False)
+        self.addHandler('infoPanelUpdate', 1, self.infoPanelUpdate, False)
 
-        self.disableHandler('shipsUpdate')
-        self.disableHandler('infoPanelUpdate')
+        self.addHandler('daysAtSea', config.fps * 15, self.daysAtSea, False)
+        self.addHandler('foodUpdate', config.fps * 15, self.foodUpdate, False)
+        self.addHandler('rumUpdate', config.fps * 20, self.rumUpdate, False)
 
     def beforeLoad(self):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
+    def daysAtSea(self):
+        if not (self.player and self.player.atSea):
+            return
+        print "Day at sea [{}]".format(config.morale['daysAtSea'])
+        self.player.daysAtSea += 1
+        self.player.morale -= config.morale['daysAtSea']
+        if self.player.morale <= 0:
+            self.player.morale = 0
+
+    def foodUpdate(self):
+        if not (self.player and self.player.atSea):
+            return
+
+        if self.player.ship.goods['food'] < 1:
+            if self.player.daysWithoutFood >= config.morale['daysToStarve']:
+                if self.player.ship.crew > 0:
+                    self.player.ship.crew -= 1
+                print "Starved [{}]".format(config.morale['crewStarved'])
+                self.player.morale -= config.morale['crewStarved']
+                self.player.daysWithoutFood = 0
+            else:
+                self.player.daysWithoutFood += 1
+                print "Food [{}]".format(config.morale['noFood'])
+                self.player.morale -= config.morale['noFood']
+
+            if self.player.morale < 0:
+                self.player.morale = 0
+        else:
+            print "Ate food"
+            self.player.ship.takeGoods('food')
+
+    def rumUpdate(self):
+        if not (self.player and self.player.atSea):
+            return
+
+        if self.player.ship.goods['rum'] < 1:
+            print "Rum [{}]".format(config.morale['noRum'])
+            self.player.morale -= config.morale['noRum']
+            if self.player.morale < 0:
+                self.player.morale = 0
+        else:
+            print "Drank rum"
+            self.player.ship.takeGoods('rum')
 
     def infoPanelUpdate(self):
         self.goldLabel.setLabel(str(self.player.gold).zfill(5))
@@ -59,11 +104,11 @@ class PlayState(GameState):
                 crewClr = Colors.dark_red
 
             self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
-            self.moraleLabel.setLabel(self.player.morale, True)\
+            self.moraleLabel.setLabel(self.player.morale, True) \
                 .setDefaultForeground(getColor(100 - self.player.morale))
-            self.hullDmgLabel.setLabel(self.player.ship.stats['hullDamage'], True)\
+            self.hullDmgLabel.setLabel(self.player.ship.stats['hullDamage'], True) \
                 .setDefaultForeground(getColor(self.player.ship.stats['hullDamage']))
-            self.sailDmgLabel.setLabel(self.player.ship.stats['sailDamage'], True)\
+            self.sailDmgLabel.setLabel(self.player.ship.stats['sailDamage'], True) \
                 .setDefaultForeground(getColor(self.player.ship.stats['sailDamage']))
 
             self.goodsDict.setItems(self.player.ship.goods)
@@ -179,6 +224,9 @@ class PlayState(GameState):
         self.headingLabel.setLabel(str(self.player.ship.heading))
 
     def enterCity(self, player, city):
+        self.disableGameHandlers()
+        self.player.returnToPort()
+
         if player.ship:
             self.map.removeEntity(player.ship, player.ship.mapX, player.ship.mapY)
         self.currentCity = city
@@ -194,7 +242,6 @@ class PlayState(GameState):
         self.storeMenu.selected = 0
 
         self.updateCityUI()
-        print 'PORT {},{}'.format(city.portX, city.portY)
 
     def castOff(self, ship):
         if not self.player.ship:
@@ -213,6 +260,9 @@ class PlayState(GameState):
         print "Casting off to {},{}".format(x, y)
         self.map.addEntity(ship, x, y)
         self.currentCity = None
+        self.player.atSea = True
+
+        self.enableGameHandlers()
 
 
     def hideShops(self):
@@ -492,7 +542,7 @@ class PlayState(GameState):
             setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(3, 28, "CARGO")).setDefaultForeground(Colors.flame)
-        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6))\
+        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6)) \
             .setDefaultForeground(Colors.lighter_azure)
 
         self.helpPanel = self.view.addElement(Elements.Frame(55, 35, 20, 15, "Help"))
@@ -902,13 +952,13 @@ class PlayState(GameState):
                 'key': None,
                 'ch': 'd',
                 'fn': lambda:
-                    self.castOff(self.player.ship)
+                self.castOff(self.player.ship)
             },
             'castOff2': {
                 'key': None,
                 'ch': 'D',
                 'fn': lambda:
-                    self.castOff(self.player.ship)
+                self.castOff(self.player.ship)
             },
             'brothel': {
                 'key': None,
@@ -924,25 +974,25 @@ class PlayState(GameState):
                 'key': None,
                 'ch': 't',
                 'fn': lambda:
-                    self.cityShowShop('tavern')
+                self.cityShowShop('tavern')
             },
             'showTavern2': {
                 'key': None,
                 'ch': 'T',
                 'fn': lambda:
-                    self.cityShowShop('tavern')
+                self.cityShowShop('tavern')
             },
             'showShipyard': {
                 'key': None,
                 'ch': 'y',
                 'fn': lambda:
-                    self.cityShowShop('shipyard')
+                self.cityShowShop('shipyard')
             },
             'showShipyard2': {
                 'key': None,
                 'ch': 'Y',
                 'fn': lambda:
-                    self.cityShowShop('shipyard')
+                self.cityShowShop('shipyard')
             },
             'showStore': {
                 'key': None,
@@ -963,49 +1013,49 @@ class PlayState(GameState):
                 'key': Keys.Up,
                 'ch': 'w',
                 'fn': lambda: self.storeMenu.selectUp() and
-                      self.updateBuySellPrices()
+                              self.updateBuySellPrices()
             },
             'menuUp2': {
                 'key': Keys.NumPad8,
                 'ch': 'W',
                 'fn': lambda: self.storeMenu.selectUp() and
-                      self.updateBuySellPrices()
+                              self.updateBuySellPrices()
             },
             'menuDn': {
                 'key': Keys.Down,
                 'ch': 's',
                 'fn': lambda: self.storeMenu.selectDown() and
-                      self.updateBuySellPrices()
+                              self.updateBuySellPrices()
             },
             'menuDn2': {
                 'key': Keys.NumPad2,
                 'ch': 'S',
                 'fn': lambda: self.storeMenu.selectDown() and
-                      self.updateBuySellPrices()
+                              self.updateBuySellPrices()
             },
             'buy': {
                 'key': Keys.Left,
                 'ch': 'a',
                 'fn': lambda:
-                    self.buyGoods(self.storeMenu.selected)
+                self.buyGoods(self.storeMenu.selected)
             },
             'buy2': {
                 'key': Keys.NumPad4,
                 'ch': 'A',
                 'fn': lambda:
-                    self.buyGoods(self.storeMenu.selected)
+                self.buyGoods(self.storeMenu.selected)
             },
             'sell': {
                 'key': Keys.Right,
                 'ch': 'd',
                 'fn': lambda:
-                    self.sellStuff(self.storeMenu.selected)
+                self.sellStuff(self.storeMenu.selected)
             },
             'sell2': {
                 'key': Keys.NumPad6,
                 'ch': 'D',
                 'fn': lambda:
-                    self.sellStuff(self.storeMenu.selected)
+                self.sellStuff(self.storeMenu.selected)
             },
         })
         self.shipyardMenu.setKeyInputs({
@@ -1418,7 +1468,6 @@ class PlayState(GameState):
         self.player.gold = 700
         self.mapElement.setPlayer(self.player)
 
-        self.enableGameHandlers()
         self.map.trigger('enterCity', self.player, startingCity)
 
     def spawnShipAtCity(self, city, type=None):
@@ -1431,10 +1480,22 @@ class PlayState(GameState):
 
     def enableGameHandlers(self):
         # Enable our gameplay handlers
-        self.enableHandler('windUpdate')
+
+        self.enableHandler('daysAtSea')
+        self.enableHandler('foodUpdate')
+        self.enableHandler('rumUpdate')
         self.enableHandler('shipsUpdate')
         self.enableHandler('infoPanelUpdate')
 
+    def disableGameHandlers(self):
+        # disable our gameplay handlers
+    
+        self.disableHandler('foodUpdate')
+        self.disableHandler('rumUpdate')
+        self.disableHandler('shipsUpdate')
+        self.disableHandler('infoPanelUpdate')
+    
+    
     def clearCityLabel(self):
         if self.cityLabel is not None:
             self.logMap.removeElement(self.cityLabel)

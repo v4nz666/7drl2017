@@ -1,3 +1,4 @@
+import config
 from Ship import Ship
 from util import randint, getColor
 
@@ -16,8 +17,17 @@ class Captain(object):
         }
         self.gold = 0
         self.lastCity = None
+        self.atSea = False
+        self.daysWithoutFood = 0
+        self.daysAtSea = 0
 
         self.setMoraleColor()
+
+    def returnToPort(self):
+        increase = int(self.daysAtSea * config.morale['daysAtSeaReturn'])
+        print "Morale boosted by {}".format(increase)
+        self.moraleAdjust(increase)
+
 
     def setMoraleColor(self):
         self.moraleColor = getColor(self.morale)

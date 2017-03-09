@@ -48,6 +48,15 @@ tavern = {
 
 }
 
+morale = {
+    'daysToStarve': 5,
+    'crewStarved': 10,
+    'noFood': 2,
+    'noRum': 3,
+    'daysAtSea': 1,
+    'daysAtSeaReturn': 0.666
+}
+
 economy = {
     'buyMul': 1.1,
     'sellMul': 0.9,

@@ -57,9 +57,9 @@ class GameState(object):
   def view(self):
     return self.__views[-1]
 
-  def addHandler(self, name, interval, handler):
+  def addHandler(self, name, interval, handler, enabled=True):
     if not name in self.tickHandlers:
-      self.tickHandlers[name] = TickHandler(interval, handler)
+      self.tickHandlers[name] = TickHandler(interval, handler, enabled)
   def removeHandler(self, name):
     self.handlerQueue.append(name)
 
