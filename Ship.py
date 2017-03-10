@@ -94,13 +94,8 @@ class Ship(Entity):
             return False
         if self.goods[item] < 1:
             return False
-        print "selling {}".format(item)
         self.goods[item] -= 1
-        print " left {}".format(self.goods[item])
-
         self.inHold -= 1
-        print " Total in hold {}".format(self.inHold)
-        print " Goods:{}".format(self.goods)
         return True
 
     @property

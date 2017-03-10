@@ -34,6 +34,7 @@ class City(Entity):
         self.setAvailableShips()
 
         self.news = []
+        self.neighbours = []
 
         self.crewAvailable = randint(20, 5) * self.size
 
@@ -50,11 +51,17 @@ class City(Entity):
             item = self.surplus()
             type = "surplus"
             effect = "plummet"
-        self.addNews("{} {} at {}. Prices {}".format(item, type, self.name, effect))
+        news = "{} {} at {}. Prices {}!".format(item, type, self.name, effect)
+        self.addNews(news)
+        for n in self.neighbours:
+            if randfloat(1) < config.news['propogateThreshold']:
+                n.addNews(news)
 
     def addNews(self, newsItem):
         self.news.append(newsItem)
-        print self.news
+
+    def removeNews(self, index):
+        self.news.pop(index)
 
     def shortage(self):
         goods = self.goods.keys()
@@ -70,7 +77,7 @@ class City(Entity):
     def surplus(self):
         goods = self.goods.keys()
         item = goods[randint(len(goods) - 1)]
-        print "{} shortage at {}".format(item, self.name)
+        print "{} surplus at {}".format(item, self.name)
         print "old price {}".format(self.prices[item])
         quantity = randint(config.economy['surplusThreshold'], config.economy['highThreshold'])
         self.goods[item] = quantity
@@ -166,9 +173,6 @@ class City(Entity):
 
         if shipType is None:
             shipType = shipTypes.keys()[randint(len(shipTypes) - 1)]
-            print "Got random ship type[{}]".format(shipType)
-        else:
-            print "using type[{}]".format(shipType)
         stats = shipStats
         if shipStats is None:
             shipStats = shipTypes[shipType]

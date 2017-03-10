@@ -75,7 +75,6 @@ class PlayState(GameState):
                 print "news at {}".format(name)
             newsCount -= 1
 
-
     def daysAtSea(self):
         if not (self.player and self.player.atSea):
             return
@@ -129,11 +128,13 @@ class PlayState(GameState):
 
         if self.player.ship:
             crewStr = "{}({})".format(self.player.ship.crew, self.player.ship.stats['maxCrew'])
+            crewStr = "{:>8}".format(crewStr)
 
             crewClr = Colors.dark_green
             if self.player.ship.crew < self.player.ship.stats['minCrew']:
                 crewClr = Colors.dark_red
 
+            self.myShipTypeLabel.setLabel("{:>11}".format("({})".format(self.player.ship.name)))
             self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
             self.moraleLabel.setLabel(self.player.morale, True) \
                 .setDefaultForeground(getColor(100 - self.player.morale))
@@ -192,9 +193,8 @@ class PlayState(GameState):
         neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
         for nx, ny in neighbours:
             n = neighbours[nx, ny]
-            if isinstance(n.entity, City):
-                print "City! {},{}".format(nx, ny)
-                print "Ship  {},{}".format(ship.mapX, ship.mapY)
+            #TODO Ship detection here...
+            #if isinstance(n.entity, Ship):
 
         if ship.isPlayer:
             self.mapElement.center(ship.mapX, ship.mapY)
@@ -258,12 +258,14 @@ class PlayState(GameState):
         self.disableGameHandlers()
         self.player.returnToPort()
 
+
         if player.ship:
             self.map.removeEntity(player.ship, player.ship.mapX, player.ship.mapY)
         self.currentCity = city
         player.setCity(city)
         self.addView(self.cityModal)
-
+        self.cityMsgs.messages = []
+        self.cityMsgs.setDirty(True)
         city.setPrices()
         self.hideShops()
         self.disableShops()
@@ -283,7 +285,7 @@ class PlayState(GameState):
         if not self.player.ship:
             return False
         if self.player.ship.crew < self.player.ship.stats['minCrew']:
-            print "Not enough crew to sail!"
+            self.cityMsgs.message("Not enough crew to sail!")
             return False
 
         self.removeView()
@@ -293,7 +295,7 @@ class PlayState(GameState):
         x, y = self.currentCity.portX, self.currentCity.portY
         ship.x = x
         ship.y = y
-        print "Casting off to {},{}".format(x, y)
+        self.cityMsgs.message("Casting off from {}".format(self.currentCity.name))
         self.map.addEntity(ship, x, y)
         self.currentCity = None
         self.player.atSea = True
@@ -531,7 +533,7 @@ class PlayState(GameState):
         self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 9, 12, 0, config.maxSails)). \
             setDefaultForeground(Colors.brass)
 
-        self.infoPanel.addElement(Elements.Label(3, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(2, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 11, "Gold")).setDefaultForeground(Colors.gold)
         self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 11, "      ")). \
             setDefaultForeground(Colors.gold)
@@ -539,7 +541,7 @@ class PlayState(GameState):
         self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 12, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(2, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
         self.infoPanel.addElement(Elements.Label(1, 14, "Nav")).setDefaultForeground(Colors.lighter_azure)
         self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "000")). \
             setDefaultForeground(Colors.azure)
@@ -550,9 +552,11 @@ class PlayState(GameState):
         self.charismaLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 18, "SHIP")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(2, 18, "SHIP")).setDefaultForeground(Colors.flame)
+        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 18, "{:>11}".format("")))\
+            .setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 8, 19, "{:>8}".format(""))). \
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "{:>8}".format(""))). \
             setDefaultForeground(Colors.azure)
         self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
         self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "   ")). \
@@ -564,7 +568,7 @@ class PlayState(GameState):
         self.sailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "   ")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 24, "AMMO")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(2, 24, "AMMO")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
         self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "   ")). \
             setDefaultForeground(Colors.azure)
@@ -572,7 +576,7 @@ class PlayState(GameState):
         self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "   ")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(3, 28, "CARGO")).setDefaultForeground(Colors.flame)
+        self.infoPanel.addElement(Elements.Label(2, 28, "CARGO")).setDefaultForeground(Colors.flame)
         self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6)) \
             .setDefaultForeground(Colors.lighter_azure)
 
@@ -614,14 +618,23 @@ class PlayState(GameState):
 
 
         #### City Modal
-        self.cityModal = View(modalW + 2, modalH + 2, modalX + 1, modalY - 1)
+        modalX = halfX / 4
+        modalY = 0
+        modalW = halfX * 3 / 2 + 4
+        modalH = self.view.height
+
+        self.cityModal = View(modalW, modalH, modalX, modalY)
         self.cityFrame = self.cityModal.addElement(Elements.Frame(0, 0, modalW + 2, modalH + 2, "Welcome!"))
         self.generalStoreFrame = self.cityModal.addElement(Elements.Frame(1, 1, 28, 16, 'GE(N)ERAL STORE'))
         self.tavernFrame = self.cityModal.addElement(Elements.Frame(1, 17, 28, 11, '(T)AVERN'))
-        self.dockFrame = self.cityModal.addElement(Elements.Frame(1, 28, 14, 10, '(D)OCK'))
+        self.dockFrame = self.cityModal.addElement(Elements.Frame(1, 28, 14, 10, 'DOC(K)'))
         self.gossipFrame = self.cityModal.addElement(Elements.Frame(15, 28, 14, 10, '(G)OSSIP'))
         self.shipyardFrame = self.cityModal.addElement(Elements.Frame(29, 1, 29, 27, 'SHIP (Y)ARD'))
         self.brothelFrame = self.cityModal.addElement(Elements.Frame(29, 28, 29, 10, '(B)ROTHEL'))
+        self.cityMsgFrame = self.cityModal.addElement(Elements.Frame(1, modalH - 12, modalW - 2, 11, "Messages"))
+        self.cityMsgFrame._chars = {k: ' ' for k in ['tl', 't', 'tr', 'r', 'br', 'b', 'bl', 'l']}
+        self.cityMsgs = self.cityMsgFrame.addElement(
+            Elements.MessageScroller(1, 1, self.cityMsgFrame.width - 2, self.cityMsgFrame.height - 2))
 
         ### General Store
         self.generalStoreFrame.addElement(Elements.Label(2, 1, "on ship"))
@@ -743,14 +756,10 @@ class PlayState(GameState):
         self.hireCrewLabel = self.tavernFrame.addElement(Elements.Label(1, 8, "(H)ire Sailors"))
         self.hireRateLabel = self.tavernFrame.addElement(Elements.Label(2, 9, "Hire rate-  "))
 
-
         self.tavernFrame.addElement(Elements.Label(18, 1, "on ship"))
         self.tavernFrame.addElement(Elements.Label(18, 8, "in town"))
-
         self.tavernCrewLabel = self.tavernFrame.addElement(Elements.Label(16, 9, "Crew"))
         self.tavernCrewAvailable = self.tavernFrame.addElement(Elements.Label(24, 9, "000"))
-
-
         self.tavernStats = self.tavernFrame.addElement(Elements.Dict(16, 2, 11, 5))
 
         ### Dock
@@ -774,6 +783,7 @@ class PlayState(GameState):
         self.shipyardFrame.setDefaultForeground(Colors.lightest_sepia)
         self.gossipFrame.setDefaultForeground(Colors.lightest_sepia)
         self.dockFrame.setDefaultForeground(Colors.lightest_sepia)
+        self.cityMsgs.setDefaultForeground(Colors.white)
 
         # Store colors
         self.storeShipGold.setDefaultForeground(Colors.lighter_sepia)
@@ -986,13 +996,13 @@ class PlayState(GameState):
             },
             'castOff': {
                 'key': None,
-                'ch': 'd',
+                'ch': 'k',
                 'fn': lambda:
                 self.castOff(self.player.ship)
             },
             'castOff2': {
                 'key': None,
-                'ch': 'D',
+                'ch': 'K',
                 'fn': lambda:
                 self.castOff(self.player.ship)
             },
@@ -1219,11 +1229,16 @@ class PlayState(GameState):
         else:
             index = randint(len(self.currentCity.news) - 1)
             news = self.currentCity.news[index]
-        print "Got News: {}".format(news)
+            self.currentCity.removeNews(index)
+        self.cityMsgs.message(news)
 
 
     def hireCrew(self):
-        if not self.player.ship or self.player.ship.crew >= self.player.ship.stats['maxCrew']:
+        if not self.player.ship:
+            self.cityMsgs.message("Why would you need a crew? You don't even have a ship.")
+            return False
+        if self.player.ship.crew >= self.player.ship.stats['maxCrew']:
+            self.cityMsgs.message("Crew roster is full already")
             return False
 
         rate = self.currentCity.hireRate
@@ -1231,8 +1246,10 @@ class PlayState(GameState):
             self.player.ship.crew += 1
             self.player.gold -= rate
             self.updateCityUI()
+            self.cityMsgs.message("Hired crew member for ${}".format(rate))
             return True
         else:
+            self.cityMsgs.message("Can't afford to hire crew")
             return False
 
     def buyRound(self):
@@ -1244,7 +1261,7 @@ class PlayState(GameState):
         rate = (crew + 1)
         if self.player.gold >= rate:
             increase = config.tavern['drinkMorale']
-            print "buying round for ${}, {} morale".format(rate, increase)
+            self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
             self.player.moraleAdjust(increase)
             self.player.gold -= rate
             self.updateCityUI()
@@ -1254,42 +1271,64 @@ class PlayState(GameState):
             return False
 
     def buyCannon(self):
-        if not self.player.ship or not self.player.ship.addCannonballs(config.shipyard['ammoBuyCount']):
+        if not self.player.ship:
+            self.cityMsgs.message("No ship to store ammo.")
             return False
+
+        count = config.shipyard['ammoBuyCount']
+        if not self.player.ship.addCannonballs(count):
+            self.cityMsgs.message("No room for ammo.")
+            return False
+        self.cityMsgs.message("Bought {} cannonballs for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
 
     def buyChain(self):
-        if not self.player.ship or not self.player.ship.addChainshot(config.shipyard['ammoBuyCount']):
+        if not self.player.ship:
+            self.cityMsgs.message("No ship to store ammo.")
             return False
+
+        count = config.shipyard['ammoBuyCount']
+        if not self.player.ship.addChainshot(count):
+            self.cityMsgs.message("No room for ammo.")
+            return False
+        self.cityMsgs.message("Bought {} chainshot for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
 
     def repairHull(self):
         if not self.player.ship:
+            self.cityMsgs.message("No ship to repair hull.")
             return False
         cost = self.currentCity.repairRate
         if self.player.gold < cost:
+            self.cityMsgs.message("Not enough gold to repair hull.")
             return False
 
         if not self.player.ship.takeGoods('wood'):
+            self.cityMsgs.message("Hull repair requires wood.")
             return False
 
         if self.player.ship.repairHull():
+            self.cityMsgs.message("Hull repaired.")
             self.player.gold -= cost
             self.updateCityUI()
 
     def repairSails(self):
         if not self.player.ship:
+            self.cityMsgs.message("No ship to repair sails.")
             return False
         cost = self.currentCity.repairRate
         if self.player.gold < cost:
+            self.cityMsgs.message("Not enough gold to repair sails.")
             return False
 
         if not self.player.ship.takeGoods('cloth'):
+            self.cityMsgs.message("Sail repair requires cloth.")
             return False
 
         if self.player.ship.repairSails():
+            self.cityMsgs.message("Sails repaired.")
             self.player.gold -= cost
             self.updateCityUI()
 
@@ -1313,8 +1352,11 @@ class PlayState(GameState):
     def buyShip(self):
         shipType, stats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
         if self.player.buyShip(shipType, stats):
+            self.cityMsgs.message("Bought a new {}!".format(shipType))
             self.shipyardMenu.selected = 0
             self.updateCityUI()
+        else:
+            self.cityMsgs.message("Can't afford to buy {}".format(shipType))
 
     def brothel(self):
         if self.player.ship:
@@ -1322,40 +1364,52 @@ class PlayState(GameState):
         else:
             crew = 0
         cost = self.currentCity.brothelRate * (crew + 1)
-
-        if self.player.gold >= cost and self.player.morale < 100:
-            self.player.morale += self.currentCity.brothelReturn
-        self.player.gold -= cost
-        self.updateCityUI()
+        if self.player.gold >= cost:
+            self.cityMsgs.message(
+                "The crew will surely remember that night for some time! Everyone is in great spirits.")
+            self.player.moraleAdjust(self.currentCity.brothelReturn)
+            self.player.gold -= cost
+            self.updateCityUI()
+        else:
+            self.cityMsgs.message("You can't afford a trip to the brothel.")
 
     def buyGoods(self, index):
         if not self.player.ship:
+            self.cityMsgs.message("You don't have a ship to store any goods in.")
             return
 
         itemName = self.getItemByIndex(index)
         price = self.currentCity.getBuyPrice(itemName)
 
         if self.player.gold < price:
+            self.cityMsgs.message("Not enough gold for {}.".format(itemName))
             return
         if self.currentCity.goods[itemName] < 1:
+            self.cityMsgs.message("{} is out of stock.".format(itemName))
             return
         if not self.player.ship.addGoods(itemName):
+            self.cityMsgs.message("{} won't fit on ship!".format(itemName))
             return
 
         self.currentCity.goods[itemName] -= 1
         self.player.gold -= price
+
+        self.cityMsgs.message("Bought {} for ${}".format(itemName, price))
         self.updateCityUI()
 
     def sellStuff(self, index):
         if not self.player.ship:
+            self.cityMsgs.message("You don't have anything to sell")
             return
 
         itemName = self.getItemByIndex(index)
         price = self.currentCity.getSellPrice(itemName)
 
         if self.currentCity.gold < price:
+            self.cityMsgs.message("City doesn't have enough gold")
             return
         if not self.player.ship.takeGoods(itemName):
+            self.cityMsgs.message("What kinda scam are you trying to pull?")
             return
         self.currentCity.goods[itemName] += 1
         self.player.gold += price
@@ -1512,7 +1566,6 @@ class PlayState(GameState):
             shipType = types[randint(1)]
             self.spawnShipAtCity(startingCity, shipType)
 
-        print "Starting at ", startingCity
         # Close intro modal
         self.removeView()
 

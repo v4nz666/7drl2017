@@ -78,7 +78,8 @@ economy = {
 }
 
 news = {
-    'genThreshold': 0.4
+    'genThreshold': 0.4,
+    'propogateThreshold': 0.6
 }
 
 maxSails = 10

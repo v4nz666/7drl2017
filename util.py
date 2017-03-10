@@ -1,6 +1,6 @@
 from RoguePy.UI import Colors
 from RoguePy.libtcod import libtcod
-from math import pi
+from math import pi, atan2
 
 rand = libtcod.random_get_instance()
 
@@ -10,9 +10,16 @@ def randint(mx, mn=0):
 def randfloat(mx, mn=0):
     return libtcod.random_get_float(rand, mn, mx)
 
-
 degToRad = pi / 180
 radToDeg = 180 / pi
+halfPi = pi / 2
+twoPi = pi * 2
+
+def bearing(ax, ay, bx, by):
+    theta = -1*(atan2(bx - ax, ay - by) - halfPi)
+    if theta < 0.0:
+        theta += twoPi
+    return radToDeg * theta
 
 colors = [
     Colors.dark_green,
@@ -20,11 +27,12 @@ colors = [
     Colors.dark_orange,
     Colors.dark_red
 ]
-indexes = [0, 33, 66, 99]
+indexes = [0, 33, 66, 100]
 colorMap = libtcod.color_gen_map(colors, indexes)
 
 # Returns a red -> green gradient color for values 0 - 100
 def getColor(val):
+    print "Getting color for {}".format(val)
     return colorMap[val]
 
 def getPirateName():
@@ -139,3 +147,5 @@ def getPirateName():
     
     return "{} {} {}".format(
         first[randint(len(first) - 1)], middle[randint(len(middle) - 1)], last[randint(len(last) - 1)])
+
+
