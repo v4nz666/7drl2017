@@ -1045,25 +1045,25 @@ class PlayState(GameState):
         })
 
         self.generalstoreMenu.setKeyInputs({
-            'menuUp': {
+            'storeMenuUp': {
                 'key': Keys.Up,
                 'ch': 'w',
                 'fn': lambda: self.generalstoreMenu.selectUp() and
                               self.updateBuySellPrices()
             },
-            'menuUp2': {
+            'storeMenuUp2': {
                 'key': Keys.NumPad8,
                 'ch': 'W',
                 'fn': lambda: self.generalstoreMenu.selectUp() and
                               self.updateBuySellPrices()
             },
-            'menuDn': {
+            'storeMenuDn': {
                 'key': Keys.Down,
                 'ch': 's',
                 'fn': lambda: self.generalstoreMenu.selectDown() and
                               self.updateBuySellPrices()
             },
-            'menuDn2': {
+            'storeMenuDn2': {
                 'key': Keys.NumPad2,
                 'ch': 'S',
                 'fn': lambda: self.generalstoreMenu.selectDown() and
@@ -1095,25 +1095,25 @@ class PlayState(GameState):
             },
         })
         self.shipyardMenu.setKeyInputs({
-            'menuUp': {
+            'shipMenuUp': {
                 'key': Keys.Up,
                 'ch': None,
                 'fn': lambda: self.shipyardMenu.selectUp() and
                               self.updateShipStats()
             },
-            'menuUp2': {
+            'shipMenuUp2': {
                 'key': Keys.NumPad8,
                 'ch': None,
                 'fn': lambda: self.shipyardMenu.selectUp() and
                               self.updateShipStats()
             },
-            'menuDn': {
+            'shipMenuDn': {
                 'key': Keys.Down,
                 'ch': None,
                 'fn': lambda: self.shipyardMenu.selectDown() and
                               self.updateShipStats()
             },
-            'menuDn2': {
+            'shipMenuDn2': {
                 'key': Keys.NumPad2,
                 'ch': None,
                 'fn': lambda: self.shipyardMenu.selectDown() and
@@ -1176,7 +1176,6 @@ class PlayState(GameState):
 
         })
 
-
         self.tavernFrame.setKeyInputs({
             'hire': {
                 'key': None,
@@ -1201,6 +1200,28 @@ class PlayState(GameState):
             }
         })
 
+        self.gossipFrame.setKeyInputs({
+            'gossip': {
+                'key': None,
+                'ch': 'g',
+                'fn': self.gossip
+            },
+            'gossip2': {
+                'key': None,
+                'ch': 'G',
+                'fn': self.gossip
+            }
+        })
+
+    def gossip(self):
+        if not len(self.currentCity.news):
+            news = "Seems pretty quiet 'round here"
+        else:
+            index = randint(len(self.currentCity.news) - 1)
+            news = self.currentCity.news[index]
+        print "Got News: {}".format(news)
+
+
     def hireCrew(self):
         if not self.player.ship or self.player.ship.crew >= self.player.ship.stats['maxCrew']:
             return False
@@ -1215,6 +1236,7 @@ class PlayState(GameState):
             return False
 
     def buyRound(self):
+
         if not self.player.ship:
             crew = 0
         else:
@@ -1233,20 +1255,15 @@ class PlayState(GameState):
 
     def buyCannon(self):
         if not self.player.ship or not self.player.ship.addCannonballs(config.shipyard['ammoBuyCount']):
-            print "Couldn't buy"
             return False
-        print "bought balls"
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
 
     def buyChain(self):
         if not self.player.ship or not self.player.ship.addChainshot(config.shipyard['ammoBuyCount']):
-            print "couldn't buy"
             return False
-        print "bought chain"
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
-
 
     def repairHull(self):
         if not self.player.ship:
