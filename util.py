@@ -14,15 +14,18 @@ def randfloat(mx, mn=0):
 degToRad = pi / 180
 radToDeg = 180 / pi
 
+colors = [
+    Colors.dark_green,
+    Colors.dark_yellow,
+    Colors.dark_orange,
+    Colors.dark_red
+]
+indexes = [0, 33, 66, 99]
+colorMap = libtcod.color_gen_map(colors, indexes)
+
+# Returns a red -> green gradient color for values 0 - 100
 def getColor(val):
-    clr = Colors.dark_red
-    if val <= 20:
-        clr = Colors.dark_green
-    elif val <= 50:
-        clr = Colors.dark_lime
-    elif val <= 80:
-        clr = Colors.dark_orange
-    return clr
+    return colorMap[val]
 
 def getPirateName():
 
@@ -134,7 +137,5 @@ def getPirateName():
         "of the Sea"
     ]
     
-    return \
-        first[randint(len(first) -1)] + " " + \
-        middle[randint(len(middle) -1)] + " " + \
-        last[randint(len(last) -1)]
+    return "{} {} {}".format(
+        first[randint(len(first) - 1)], middle[randint(len(middle) - 1)], last[randint(len(last) - 1)])
