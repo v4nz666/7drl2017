@@ -248,7 +248,7 @@ class GenerateState(GameState):
         return False
 
     def checkPath(self, x1, y1, x2, y2):
-        path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc)
+        path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc, 0, 0.0)
 
         libtcod.path_compute(path, x1, y1, x2, y2)
         s = libtcod.path_size(path)
