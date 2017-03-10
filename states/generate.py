@@ -223,6 +223,7 @@ class GenerateState(GameState):
 
             print 'Placed city at {}, {}. {} left'.format(x, y, cityCount)
             cityCount -= 1
+        self.map.initCitiesFov()
 
     def getOceanCorner(self):
         maxX = self.map.width - 1

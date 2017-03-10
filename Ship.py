@@ -17,6 +17,12 @@ class Ship(Entity):
 
         self.ch = '@'
 
+        self.isPlayer = isPlayer
+        self.x = x
+        self.y = y
+
+        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'], True, 8, isPlayer)
+
         self.anchored = True
         self.heading = 0.0
         self.headingRad = 0.0
@@ -26,16 +32,6 @@ class Ship(Entity):
 
         self.cannonballs = 0
         self.chainshot = 0
-
-        self.canSee = True
-        self.viewRadius = 8
-
-        self.x = x
-        self.y = y
-
-        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'])
-
-        self.isPlayer = isPlayer
 
         self.goods = {
             'food': 0,
@@ -47,9 +43,6 @@ class Ship(Entity):
         }
 
         self.inHold = 0
-
-        self._initFovMap()
-        self.calculateFovMap()
 
     @staticmethod
     def getBuyPrice(stats):
@@ -128,32 +121,6 @@ class Ship(Entity):
 
     def toggleAnchor(self):
         self.anchored = not self.anchored
-
-    def _initFovMap(self):
-        w, h = self.map.width, self.map.height
-        self.fovMap = libtcod.map_new(w, h)
-        for y in range(h):
-            for x in range(w):
-                c = self.map.getCell(x, y)
-                if c:
-                    libtcod.map_set_properties(self.fovMap, x, y, c.terrain.transparent, c.terrain.passable)
-
-    def calculateFovMap(self):
-        libtcod.map_compute_fov(
-            self.fovMap, self.mapX, self.mapY, self.viewRadius, True, libtcod.FOV_SHADOW
-        )
-
-        for _y in range(-self.viewRadius, self.viewRadius + 1):
-            for _x in range(-self.viewRadius, self.viewRadius + 1):
-                if self.isPlayer:
-                    x = self.mapX + _x
-                    y = self.mapY + _y
-                    c = self.map.getCell(x, y)
-                    if c and self.inSight(x, y):
-                        c.seen = True
-
-    def inSight(self, x, y):
-        return libtcod.map_is_in_fov(self.fovMap, x, y)
 
     def sailAdjust(self, step):
         newSails = max(min(self.sails + step, config.maxSails), 0)

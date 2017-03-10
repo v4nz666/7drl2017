@@ -52,13 +52,10 @@ class Captain(object):
         if self.ship:
             cost -= Ship.getSellPrice(self.ship.stats)
 
-        print "Gold[{}] cost[{}]".format(self.gold, cost)
         if self.gold < cost:
             return False
 
         ship = Ship(self.lastCity.map, shipType, self.lastCity.portX, self.lastCity.portY, True, stats)
-        print "immediate goods {}".format(ship.goods)
-        ship.calculateFovMap()
 
         if self.ship:
             print "selling goods {}".format(self.ship.goods)

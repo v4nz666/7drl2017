@@ -10,7 +10,7 @@ from util import randint, randfloat
 class City(Entity):
 
     def __init__(self, map, x, y, name, portX, portY, ch, fg):
-        super(City, self).__init__(map, x, y, name, ch, fg)
+        super(City, self).__init__(map, x, y, name, ch, fg, True, config.city['viewRadius'])
         self.shops = [
             'Dock',
             'General Store'
@@ -27,6 +27,7 @@ class City(Entity):
         self.size = randint(1, 4)
         self.setShops()
         self.setGoods()
+        self.setPrices()
 
         self.availableShips = []
         self.availableShipStats = []
@@ -38,6 +39,44 @@ class City(Entity):
 
     def __str__(self):
         return '{}[{}] at {}, {}\n  Shops: {}\n Port: {}, {}'.format(self.name, self.size, self.x, self.y, self.shops, self.portX, self.portY)
+
+    def generateNews(self):
+        if randfloat(1) < 0.5:
+            item = self.shortage()
+            type = "shortage"
+            effect = "skyrocket"
+
+        else:
+            item = self.surplus()
+            type = "surplus"
+            effect = "plummet"
+        self.addNews("{} {} at {}. Prices {}".format(item, type, self.name, effect))
+
+    def addNews(self, newsItem):
+        self.news.append(newsItem)
+        print self.news
+
+    def shortage(self):
+        goods = self.goods.keys()
+        item = goods[randint(len(goods) - 1)]
+        print "{} shortage at {}".format(item, self.name)
+        print "old price {}".format(self.prices[item])
+        quantity = randint(config.economy['scarceThreshold'])
+        self.goods[item] = quantity
+        self.prices[item] = self.calculateBuySellPrice(item)
+        print "new price {}".format(self.prices[item])
+        return item
+
+    def surplus(self):
+        goods = self.goods.keys()
+        item = goods[randint(len(goods) - 1)]
+        print "{} shortage at {}".format(item, self.name)
+        print "old price {}".format(self.prices[item])
+        quantity = randint(config.economy['surplusThreshold'], config.economy['highThreshold'])
+        self.goods[item] = quantity
+        self.prices[item] = self.calculateBuySellPrice(item)
+        print "new price {}".format(self.prices[item])
+        return item
 
     def hireCrewMember(self):
         if self.crewAvailable:
@@ -60,16 +99,17 @@ class City(Entity):
 
         self.gold = randint(1000) * self.size
         self.goods = {
-            'food': randint(500) * self.size,
-            'rum': randint(200) * self.size,
-            'wood': randint(200) * self.size,
-            'cloth': randint(200) * self.size,
-            'coffee': randint(100) * self.size,
-            'spice': randint(100) * self.size,
+            'food': randint(config.economy['surplusThreshold']),
+            'rum': randint(config.economy['surplusThreshold']),
+            'wood': randint(config.economy['surplusThreshold']),
+            'cloth': randint(config.economy['surplusThreshold']),
+            'coffee': randint(config.economy['surplusThreshold']),
+            'spice': randint(config.economy['surplusThreshold'])
         }
 
     def setPrices(self):
-        for item in ['food','rum','wood','cloth','coffee','spice']:
+
+        for item in config.economy['goods']:
             self.prices[item] = self.calculateBuySellPrice(item)
 
         self.brothelRate = int(self.size * randfloat(0.8, 1.2) * config.brothel['baseRate'])
@@ -92,12 +132,15 @@ class City(Entity):
 
     def calculateBuySellPrice(self, item):
         count = self.goods[item]
-
         mul = 1.0
-        if count < config.economy['lowThreshold']:
+        if count < config.economy['scarceThreshold']:
+            mul = 2.5
+        elif count < config.economy['lowThreshold']:
             mul = 1.5
-        elif count <= config.economy['highThreshold']:
+        elif count >= config.economy['highThreshold']:
             mul = 0.75
+        elif count >= config.economy['surplusThreshold']:
+            mul = 0.5
 
         base = config.economy['basePrice'][item]
         rand = randfloat(0.9, 1.1)

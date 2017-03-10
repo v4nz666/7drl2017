@@ -139,9 +139,7 @@ class Map:
         if c.entity is None:
             self.getCell(x, y).entity = e
             if e.canSee:
-                # TODO This does appear to be happening
-                e.calculateFov()
-                raise Exception
+                e.calculateFovMap()
             return True
         return False
 
@@ -161,6 +159,16 @@ class Map:
             if city.size == 4:
                 cities.append(city)
         return cities
+
+    def initCitiesFov(self):
+        for source in self.cities:
+            neighbours = []
+            city = self.cities[source]
+            for target in self.cities:
+                neighbour = self.cities[target]
+                if neighbour != city and city.inSight(neighbour.x, neighbour.y):
+                    neighbours.append(self.cities[target])
+            city.neighbours = neighbours
 
 
 class Cell:

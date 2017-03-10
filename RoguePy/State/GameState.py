@@ -64,12 +64,10 @@ class GameState(object):
     self.handlerQueue.append(name)
 
   def disableHandler(self, name):
-    print 'disabling[{}]'.format(name)
     if name in self.tickHandlers:
       self.tickHandlers[name].enabled = False
-  def enableHandler(self, name):
-    print 'enabling[{}]'.format(name)
 
+  def enableHandler(self, name):
     if name in self.tickHandlers:
       self.tickHandlers[name].enabled = True
 

@@ -26,7 +26,8 @@ city = {
         'gossip',
         'brothel',
         'shipyard'
-    ]
+    ],
+    'viewRadius': 20
 }
 
 brothel = {
@@ -60,8 +61,10 @@ morale = {
 economy = {
     'buyMul': 1.1,
     'sellMul': 0.9,
+    'scarceThreshold': 10,
     'lowThreshold': 50,
-    'highThreshold': 1000,
+    'highThreshold': 500,
+    'surplusThreshold': 1000,
     'basePrice': {
         'food': 3,
         'rum': 5,
@@ -69,7 +72,13 @@ economy = {
         'cloth': 10,
         'coffee': 20,
         'spice': 25
-    }
+    },
+    'goods':
+        ['food','rum','wood','cloth','coffee','spice']
+}
+
+news = {
+    'genThreshold': 0.4
 }
 
 maxSails = 10
