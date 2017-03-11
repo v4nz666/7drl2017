@@ -439,7 +439,11 @@ class PlayState(GameState):
         self.removeView()
         ship.anchored = True
         ship.heading = 0.0
+        self.headingDial.setVal(int(ship.heading))
         ship.sails = 0
+        self.sailSlider.val  = ship.sails
+
+
         x, y = self.currentCity.portX, self.currentCity.portY
         ship.x = x
         ship.y = y
@@ -447,7 +451,6 @@ class PlayState(GameState):
         self.map.addEntity(ship, x, y)
         self.currentCity = None
         self.player.atSea = True
-
         self.enableGameHandlers()
 
     def hideShops(self):
