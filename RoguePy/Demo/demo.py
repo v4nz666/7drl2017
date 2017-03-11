@@ -36,8 +36,8 @@ stateManager.addState(s_demo5)
 stateManager.addState(s_demo6)
 stateManager.addState(s_quit)
 
-stateManager.setCurrentState('demo6')
-# stateManager.setCurrentState('splash')
+#stateManager.setCurrentState('demo6')
+stateManager.setCurrentState('splash')
 
 while not ui.is_closed():
   stateManager.doTick()

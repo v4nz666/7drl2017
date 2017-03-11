@@ -193,3 +193,38 @@ def deletePath(path):
 
 def pathWalk(path):
     return libtcod.path_walk(path, True)
+
+###################################################
+# LEADERBOARD FUNCTIONS
+
+import requests
+import json
+
+private = "ss6hMRk1NUWE1cQa6Nt3hggVIwqDH3RUq_mPyjM7jxHQ"
+public = "58c36b3ed60245055cd31378"
+
+host = "http://dreamlo.com/lb/"
+
+
+def addScore(name, score):
+    
+    url = host + private + "/add/" + name + "/" + str(score)
+    response = requests.get(url)
+    
+    print response.text
+    
+    
+def getScores():
+    
+    url = host + private + "/json"
+    response = requests.get(url)
+    
+    jsonData = json.loads(response.text)
+    
+    scores = []
+    
+    for entry in jsonData['dreamlo']['leaderboard']['entry']:
+        scores.append( entry['name'] + ": " + entry['score'])
+    
+    
+    return scores
