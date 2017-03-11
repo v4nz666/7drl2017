@@ -1,6 +1,7 @@
 import sys
 
 import config
+import util
 from RoguePy.libtcod import libtcod
 from RoguePy.Game import Entity
 from shipTypes import shipTypes
@@ -187,6 +188,21 @@ class Ship(Entity):
         if self.stats['sailDamage'] < 0:
             self.stats['sailDamage'] = 0
         return True
+
+    def canFire(self, x, y):
+        bearing = util.bearing(self.mapX, self.mapY, x, y)
+        print "Heading: {} Bearing: {} adj {}".format(self.heading, bearing, self.heading - bearing)
+        bearing = self.heading - bearing
+        if bearing < 0:
+            bearing += 180
+        elif bearing >= 360:
+            bearing -= 180
+
+        if 50 <= abs(bearing) <= 130:
+            print "firing at from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
+        else:
+            print "{},{} -> {},{} out of cone".format(self.mapX, self.mapY, x, y)
+
 
 class ShipPlacementError(Exception):
     pass

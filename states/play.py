@@ -700,7 +700,7 @@ class PlayState(GameState):
 
 
         self.infoPanel.addElement(Elements.Label(2, 19, "SHIP")).setDefaultForeground(Colors.flame)
-        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 19, "{:>11}".format("")))\
+        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 19, "{:>11}".format(""))) \
             .setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(2, 20, "Crew")).setDefaultForeground(Colors.darker_flame)
 
@@ -716,15 +716,15 @@ class PlayState(GameState):
         self.infoPanel.addElement(Elements.Label(1, 24, "Morale")).setDefaultForeground(Colors.lighter_azure)
         self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 24, "   ")). \
             setDefaultForeground(Colors.azure)
-        
+
         self.infoPanel.addElement(Elements.Label(2, 25, "Damage")).setDefaultForeground(Colors.darker_flame)
-        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 26, "Hull"))\
+        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 26, "Hull")) \
             .setDefaultForeground(util.getColor(100))
-        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "n/a"))\
+        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "n/a")) \
             .setDefaultForeground(util.getColor(100))
-        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 27, "Sail"))\
+        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 27, "Sail")) \
             .setDefaultForeground(util.getColor(100))
-        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 27, "n/a"))\
+        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 27, "n/a")) \
             .setDefaultForeground(util.getColor(100))
 
 
@@ -762,11 +762,11 @@ class PlayState(GameState):
         pauseH = 4
 
         self.pauseMenu = View(pauseW, pauseH, pauseX, pauseY)
-        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused"))\
+        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused")) \
             .setDefaultForeground(Colors.darker_azure)
-        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back"))\
+        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back")) \
             .setDefaultForeground(Colors.azure)
-        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit"))\
+        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit")) \
             .setDefaultForeground(Colors.azure)
 
 
@@ -1176,6 +1176,11 @@ class PlayState(GameState):
 
         })
 
+        self.view.setMouseInputs({
+            'lClick': self.fireCannon,
+            'rClick': self.fireChain
+        })
+
         self.logModal.setKeyInputs({
             'hideModal': {
                 'key': Keys.Tab,
@@ -1446,6 +1451,32 @@ class PlayState(GameState):
                 'fn': self.gossip
             }
         })
+
+    def fire(self, mouse, left=True):
+        if not (self.player and self.player.ship):
+            return
+        charSize = libtcod.sys_get_char_size()
+        x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
+
+        if x == -1 or y == -1:
+            return
+
+        if self.player.ship.canFire(x, y):
+            if left:
+                self.player.ship.fireCannon(x, y)
+            else:
+                self.player.ship.fireChain(x, y)
+
+        #TODO remove
+        c = self.map.getCell(x, y)
+        if c.entity:
+            print c.entity
+
+    def fireChain(self, mouse):
+        self.fire(mouse, left=False)
+
+    def fireCannon(self, mouse):
+        self.fire(mouse, left=True)
 
     def gossip(self):
         if not len(self.currentCity.news):
