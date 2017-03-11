@@ -221,7 +221,6 @@ class GenerateState(GameState):
             elif not self.createCity(x, y):
                 continue
 
-            print 'Placed city at {}, {}. {} left'.format(x, y, cityCount)
             cityCount -= 1
         self.map.initCityNeighbours()
 

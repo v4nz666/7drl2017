@@ -77,7 +77,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 1000,
-        'color': Colors.dark_blue
+        'color': Colors.darkest_blue
     },
     "Sloop": {
         'maxSpeed': 30,

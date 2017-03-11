@@ -191,16 +191,18 @@ class PlayState(GameState):
             self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
             self.moraleLabel.setLabel(self.player.morale, True) \
                 .setDefaultForeground(getColor(100 - self.player.morale))
-            self.hullDmgLabel.setLabel(self.player.ship.stats['hullDamage'], True) \
-                .setDefaultForeground(getColor(self.player.ship.stats['hullDamage']))
-            self.sailDmgLabel.setLabel(self.player.ship.stats['sailDamage'], True) \
-                .setDefaultForeground(getColor(self.player.ship.stats['sailDamage']))
 
             self.goodsDict.setItems(self.player.ship.goods)
 
             self.cannonballCountLabel.setLabel(self.player.ship.cannonballs, True)
             self.chainshotCountLabel.setLabel(self.player.ship.chainshot, True)
 
+            hullDmg = self.player.ship.stats['hullDamage']
+            self.hullDamageLabel.setDefaultForeground(util.getColor(hullDmg))
+            self.hullDamageVal.setLabel("{:>3}".format(hullDmg)).setDefaultForeground(util.getColor(hullDmg))
+            sailDmg = self.player.ship.stats['sailDamage']
+            self.sailDamageLabel.setDefaultForeground(util.getColor(sailDmg))
+            self.sailDamageVal.setLabel("{:>3}".format(sailDmg)).setDefaultForeground(util.getColor(sailDmg))
 
     def shipsUpdate(self):
         self.playerUpdate()
@@ -475,6 +477,10 @@ class PlayState(GameState):
 
         # Buy sell ships
         self.shipyardMenu.setItems(self.currentCity.availableShips)
+        if not len(self.currentCity.availableShips):
+            self.shipyardMenu.disable()
+        else:
+            self.shipyardMenu.enable()
         self.updateShipStats()
 
     def updateBrothelValues(self):
@@ -623,7 +629,7 @@ class PlayState(GameState):
             self.mapOverlay.console, cursorX, cursorY, '+', Colors.chartreuse, Colors.white)
 
     def setupView(self):
-        self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 36, "Info"))
+        self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 40, "Info"))
         self.infoPanel.addElement(Elements.Label(1, 1, "Heading")).setDefaultForeground(Colors.flame)
         self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2)).setDefaultForeground(Colors.brass)
         self.headingLabel = self.infoPanel.addElement(Elements.Label(self.headingDial.x,
@@ -670,12 +676,6 @@ class PlayState(GameState):
         self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
         self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "   ")). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 21, "Hull Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.hullDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "   ")). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 22, "Sail Dmg")).setDefaultForeground(Colors.lighter_azure)
-        self.sailDmgLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "   ")). \
-            setDefaultForeground(Colors.azure)
 
         self.infoPanel.addElement(Elements.Label(2, 24, "AMMO")).setDefaultForeground(Colors.flame)
         self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
@@ -688,11 +688,21 @@ class PlayState(GameState):
         self.infoPanel.addElement(Elements.Label(2, 28, "CARGO")).setDefaultForeground(Colors.flame)
         self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6)) \
             .setDefaultForeground(Colors.lighter_azure)
+        
+        self.infoPanel.addElement(Elements.Label(2, 35, "DAMAGE")).setDefaultForeground(Colors.flame)
+        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 36, "Hull"))\
+            .setDefaultForeground(util.getColor(100))
+        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 36, "n/a"))\
+            .setDefaultForeground(util.getColor(100))
+        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 37, "Sail"))\
+            .setDefaultForeground(util.getColor(100))
+        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 37, "n/a"))\
+            .setDefaultForeground(util.getColor(100))
 
-        self.helpPanel = self.view.addElement(Elements.Frame(55, 35, 20, 15, "Help"))
-        self.helpPanel.addElement(Elements.Label(1, 1, "A/D")).setDefaultForeground(Colors.dark_green)
+        self.helpPanel = self.view.addElement(Elements.Frame(55, 40, 20, 10, "Help"))
+        self.helpPanel.addElement(Elements.Label(1, 1, "Lt/Rt")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 1, "Heading L/R")).setDefaultForeground(Colors.azure)
-        self.helpPanel.addElement(Elements.Label(1, 2, "W/S")).setDefaultForeground(Colors.dark_green)
+        self.helpPanel.addElement(Elements.Label(1, 2, "Up/Dn")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 2, "Sails Up/Dn")).setDefaultForeground(Colors.azure)
         self.helpPanel.addElement(Elements.Label(1, 4, "TAB")).setDefaultForeground(Colors.dark_green)
         self.helpPanel.addElement(Elements.Label(7, 4, "Cptn's Log")).setDefaultForeground(Colors.azure)
@@ -1098,6 +1108,17 @@ class PlayState(GameState):
         })
 
         self.cityModal.setKeyInputs({
+            'postScore': {
+                'key': None,
+                'ch': '[',
+                'fn': self.postScore
+            },
+            'getScore': {
+                'key': None,
+                'ch': ']',
+                'fn': self.getScore
+            },
+
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1501,7 +1522,9 @@ class PlayState(GameState):
             return
 
         self.currentCity.goods[itemName] -= 1
+        self.currentCity.gold += price
         self.player.gold -= price
+
 
         self.cityMsgs.message("Bought {} for ${}".format(itemName, price))
         self.updateCityUI()
@@ -1747,3 +1770,10 @@ class PlayState(GameState):
         print "Quitting"
         sys.exit()
 
+
+
+    def postScore(self):
+        self.cityMsgs.message("POSTing score...")
+
+    def getScore(self):
+        self.cityMsgs.message("GETing scores...")
