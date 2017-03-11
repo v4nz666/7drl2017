@@ -7,12 +7,16 @@ from RoguePy.Input import Keys
 from RoguePy.UI import Elements
 from RoguePy.UI import Colors
 from RoguePy.State import GameState
-
+from sounds import *
 
 class SplashState(GameState):
     def init(self):
         self.setupView()
         self.setupInputs()
+
+    def beforeLoad(self):
+        mixer.music.load(os.path.join(path, 'intro.wav'))
+        mixer.music.play(-1)
 
     def setupView(self):
         titleString = 'Pirates of Rogue Basin'
@@ -42,7 +46,7 @@ class SplashState(GameState):
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': sys.exit
+                'fn': self.quit
             },
             'next': {
                 'key': 'any',
@@ -50,3 +54,10 @@ class SplashState(GameState):
                 'fn': lambda: self.manager.setNextState('generate')
             }
         })
+
+    @staticmethod
+    def quit():
+        mixer.music.stop()
+        mixer.quit()
+        print "Quitting"
+        sys.exit()

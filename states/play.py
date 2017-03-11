@@ -11,6 +11,7 @@ from RoguePy.Input import Keys
 from RoguePy.State import GameState
 from RoguePy.UI import View
 from RoguePy.libtcod import libtcod
+from sounds import *
 
 import config
 import sys
@@ -46,6 +47,7 @@ class PlayState(GameState):
         self.addHandler('aiUpdate', 10, self.aiUpdate, False)
 
         self.addHandler('generateNews', config.fps * 10, self.generateNews)
+        self.addHandler('citiesUpdate', config.fps * 60, self.citiesUpdate)
         self.addHandler('generateCaptains', config.captains['genDelay'], self.generateCaptains, False)
 
     def enableGameHandlers(self):
@@ -72,6 +74,23 @@ class PlayState(GameState):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+        mixer.music.stop()
+        mixer.music.queue(os.path.join(path, 'city.wav'))
+        mixer.music.play(-1)
+
+
+    def beforeUnload(self):
+        mixer.music.fadeout(500)
+
+    def citiesUpdate(self):
+        for c in self.map.cities:
+            city = self.map.cities[c]
+            if city == self.currentCity:
+                continue
+            city.gold += randint(city.size * 1000)
+
+        if self.currentCity is not None:
+            self.updateCityUI()
 
     def generateCaptains(self):
         #TODO generate a random number
@@ -176,19 +195,22 @@ class PlayState(GameState):
         self.goldLabel.setLabel(str(self.player.gold).zfill(5))
         self.repLabel.setLabel(self.player.rep)
 
+        self.captainsName.setText(self.player.name).setDefaultForeground(Colors.white)
+
         for k in self.player.skills.keys():
             getattr(self, "{}Label".format(k)).setLabel(str(self.player.skills[k]).zfill(3))
 
         if self.player.ship:
-            crewStr = "{}({})".format(self.player.ship.crew, self.player.ship.stats['maxCrew'])
-            crewStr = "{:>8}".format(crewStr)
+            self.myShipTypeLabel.setLabel("{:>11}".format("({})".format(self.player.ship.name)))
 
+            crewStr = "{:>3}".format(self.player.ship.crew)
             crewClr = Colors.dark_green
             if self.player.ship.crew < self.player.ship.stats['minCrew']:
                 crewClr = Colors.dark_red
 
-            self.myShipTypeLabel.setLabel("{:>11}".format("({})".format(self.player.ship.name)))
-            self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
+            self.crewCountLabel.setLabel(crewStr).setDefaultForeground(crewClr)
+            self.crewMinLabel.setLabel(self.player.ship.stats['minCrew'])
+            self.crewMaxLabel.setLabel(self.player.ship.stats['maxCrew'])
             self.moraleLabel.setLabel(self.player.morale, True) \
                 .setDefaultForeground(getColor(100 - self.player.morale))
 
@@ -209,8 +231,15 @@ class PlayState(GameState):
         self.aiUpdate()
 
     def playerUpdate(self):
-        if self.player.ship:
-            self.moveShip(self.player.ship)
+        if not self.player.ship:
+            return
+
+        if self.player.ship.sunk or self.player.dead:
+            print "YOU DIED!"
+            sys.exit()
+
+        self.moveShip(self.player.ship)
+
 
     def aiUpdate(self):
         toPurge = []
@@ -282,8 +311,9 @@ class PlayState(GameState):
             ship.x = self.map.width - 1
         if ship.mapY < 0:
             ship.y = 0
-        elif ship.mapY >= self.map.height:
-            ship.y = self.map.height - 1
+        # HACK! Keep ships off the dreaded bottom-right corner
+        elif ship.mapY >= self.map.height - 1:
+            ship.y = self.map.height - 2
 
         if ship.mapX == oldX and ship.mapY == oldY:
             return False
@@ -296,6 +326,7 @@ class PlayState(GameState):
             ship.x = oldX
             ship.y = oldY
             return False
+
         self.map.removeEntity(ship, oldX, oldY)
         self.map.addEntity(ship, ship.mapX, ship.mapY)
         self.mapElement.setDirty(True)
@@ -366,6 +397,8 @@ class PlayState(GameState):
         self.headingLabel.setLabel(str(self.player.ship.heading))
 
     def enterCity(self, player, city):
+        mixer.music.load(os.path.join(path, 'city.wav'))
+        mixer.music.play(-1)
         self.disableGameHandlers()
         self.player.returnToPort()
 
@@ -393,6 +426,10 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def castOff(self, ship):
+        mixer.music.stop()
+        mixer.music.load(os.path.join(path, 'sailing.wav'))
+        mixer.music.play(-1)
+
         if not self.player.ship:
             return False
         if self.player.ship.crew < self.player.ship.stats['minCrew']:
@@ -402,7 +439,11 @@ class PlayState(GameState):
         self.removeView()
         ship.anchored = True
         ship.heading = 0.0
+        self.headingDial.setVal(int(ship.heading))
         ship.sails = 0
+        self.sailSlider.val  = ship.sails
+
+
         x, y = self.currentCity.portX, self.currentCity.portY
         ship.x = x
         ship.y = y
@@ -410,7 +451,6 @@ class PlayState(GameState):
         self.map.addEntity(ship, x, y)
         self.currentCity = None
         self.player.atSea = True
-
         self.enableGameHandlers()
 
     def hideShops(self):
@@ -444,12 +484,22 @@ class PlayState(GameState):
         rateStr = "${}/{}".format(self.currentCity.repairRate, config.shipyard['repairReturn'])
         self.repairRateVal.setLabel(rateStr)
         if self.player.ship:
+            self.yourShipFrame.show()
             hullDamage = self.player.ship.stats['hullDamage']
             sailDamage = self.player.ship.stats['sailDamage']
             hullColor = getColor(hullDamage)
             sailColor = getColor(sailDamage)
             self.repairHullCurrent.setLabel(str(hullDamage)).setDefaultForeground(hullColor)
             self.repairSailCurrent.setLabel(str(sailDamage)).setDefaultForeground(sailColor)
+
+            valueStr = "{:>5}".format(Ship.getSellPrice(self.player.ship.stats))
+            self.yourShipValue.setLabel(valueStr).setDefaultForeground(Colors.gold)
+            hullDmg = self.player.ship.stats['hullDamage']
+            hullStr = "{:>3}".format(hullDmg)
+            self.yourShipHullDmg.setLabel(hullStr).setDefaultForeground(util.getColor(hullDmg))
+            sailDmg = self.player.ship.stats['sailDamage']
+            sailStr = "{:>3}".format(sailDmg)
+            self.yourShipSailDmg.setLabel(sailStr).setDefaultForeground(util.getColor(sailDmg))
 
             if not self.player.ship.goods['wood']:
                 self.notEnoughWood.setDefaultForeground(Colors.darker_red)
@@ -460,6 +510,7 @@ class PlayState(GameState):
             else:
                 self.notEnoughCloth.setDefaultForeground(Colors.darker_green)
         else:
+            self.yourShipFrame.hide()
             self.repairHullCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
             self.repairSailCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
 
@@ -567,6 +618,11 @@ class PlayState(GameState):
         self.introMenu = modal.addElement(Elements.Menu(1, modal.height - menuHeight - 1, modal.width - 2, menuHeight, menuItems))
 
         self.introModal.setKeyInputs({
+            'pause': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.showPause
+            },
             'moveUp': {
                 'key': Keys.Up,
                 'ch': 'w',
@@ -649,55 +705,65 @@ class PlayState(GameState):
             setDefaultForeground(Colors.brass)
 
         self.infoPanel.addElement(Elements.Label(2, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 11, "Gold")).setDefaultForeground(Colors.gold)
-        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 11, "      ")). \
+        self.captainsName = self.infoPanel.addElement(Elements.Text(1, 11, self.infoPanel.width - 2, 4, ""))
+        self.infoPanel.addElement(Elements.Label(1, 14, "Gold")).setDefaultForeground(Colors.gold)
+        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 14, "      ")). \
             setDefaultForeground(Colors.gold)
-        self.infoPanel.addElement(Elements.Label(1, 12, "Rep")).setDefaultForeground(Colors.lighter_azure)
-        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 12, "000")). \
+        self.infoPanel.addElement(Elements.Label(1, 15, "Rep")).setDefaultForeground(Colors.lighter_azure)
+        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
-        self.infoPanel.addElement(Elements.Label(1, 14, "Nav")).setDefaultForeground(Colors.lighter_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "000")). \
+        self.infoPanel.addElement(Elements.Label(2, 16, "Skills")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(1, 17, "Nav")).setDefaultForeground(Colors.lighter_azure)
+        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 17, "000")). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 15, "Gun")).setDefaultForeground(Colors.lighter_azure)
-        self.gunLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "000")). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 16, "Char")).setDefaultForeground(Colors.lighter_azure)
-        self.charismaLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "000")). \
+        self.infoPanel.addElement(Elements.Label(1, 18, "Gun")).setDefaultForeground(Colors.lighter_azure)
+        self.gunLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 18, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 18, "SHIP")).setDefaultForeground(Colors.flame)
-        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 18, "{:>11}".format("")))\
+
+
+        self.infoPanel.addElement(Elements.Label(2, 19, "SHIP")).setDefaultForeground(Colors.flame)
+        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 19, "{:>11}".format(""))) \
             .setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "{:>8}".format(""))). \
+        self.infoPanel.addElement(Elements.Label(2, 20, "Crew")).setDefaultForeground(Colors.darker_flame)
+
+        self.infoPanel.addElement(Elements.Label(1, 21, "On Board")).setDefaultForeground(Colors.lighter_azure)
+        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "{:>3}".format(""))). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
-        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "   ")). \
+        self.infoPanel.addElement(Elements.Label(1, 22, "Min")).setDefaultForeground(Colors.lighter_azure)
+        self.crewMinLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "{:>3}".format(""))). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 23, "Max")).setDefaultForeground(Colors.lighter_azure)
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 23, "{:>3}".format(""))). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 24, "Morale")).setDefaultForeground(Colors.lighter_azure)
+        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 24, "   ")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 24, "AMMO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
-        self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "   ")). \
+        self.infoPanel.addElement(Elements.Label(2, 25, "Damage")).setDefaultForeground(Colors.darker_flame)
+        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 26, "Hull")) \
+            .setDefaultForeground(util.getColor(100))
+        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "n/a")) \
+            .setDefaultForeground(util.getColor(100))
+        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 27, "Sail")) \
+            .setDefaultForeground(util.getColor(100))
+        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 27, "n/a")) \
+            .setDefaultForeground(util.getColor(100))
+
+
+        self.infoPanel.addElement(Elements.Label(2, 28, "AMMO")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(1, 29, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
+        self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 29, "   ")). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 26, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
-        self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "   ")). \
+        self.infoPanel.addElement(Elements.Label(1, 30, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
+        self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 30, "   ")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 28, "CARGO")).setDefaultForeground(Colors.flame)
-        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6)) \
+        self.infoPanel.addElement(Elements.Label(2, 31, "CARGO")).setDefaultForeground(Colors.darker_flame)
+        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 32, self.infoPanel.width - 2, 6)) \
             .setDefaultForeground(Colors.lighter_azure)
-        
-        self.infoPanel.addElement(Elements.Label(2, 35, "DAMAGE")).setDefaultForeground(Colors.flame)
-        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 36, "Hull"))\
-            .setDefaultForeground(util.getColor(100))
-        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 36, "n/a"))\
-            .setDefaultForeground(util.getColor(100))
-        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 37, "Sail"))\
-            .setDefaultForeground(util.getColor(100))
-        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 37, "n/a"))\
-            .setDefaultForeground(util.getColor(100))
+
 
         self.helpPanel = self.view.addElement(Elements.Frame(55, 40, 20, 10, "Help"))
         self.helpPanel.addElement(Elements.Label(1, 1, "Lt/Rt")).setDefaultForeground(Colors.dark_green)
@@ -712,6 +778,21 @@ class PlayState(GameState):
 
         halfX = self.view.width / 2
         halfY = self.view.height / 2
+
+        #### Pause menu
+        pauseX = self.view.width / 2 - 7
+        pauseY = self.view.height / 2 - 2
+        pauseW = 13
+        pauseH = 4
+
+        self.pauseMenu = View(pauseW, pauseH, pauseX, pauseY)
+        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused")) \
+            .setDefaultForeground(Colors.darker_azure)
+        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back")) \
+            .setDefaultForeground(Colors.azure)
+        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit")) \
+            .setDefaultForeground(Colors.azure)
+
 
         #### Captain's Log Modal
         modalX = halfX / 4 - 1
@@ -844,13 +925,25 @@ class PlayState(GameState):
                                                                          "Up/Dn-Select | Enter buys"))
         self.shipyardMenu = self.shipSaleFrame.addElement(Elements.Menu(1, 2, 12, 13))
         self.shipyardMenu.setWrap(False)
-        self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 2, 13, 13, "Ship Specs"))
-        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 2, 11, 8))
-        self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 9, "Damage"))
-        self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 10, 11, 2)).setItems({
+        self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 1, 13, 11, "Ship Specs"))
+        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 1, 11, 8))
+        self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 7, "Damage"))
+        self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 8, 11, 2)).setItems({
             'hull': 85,
             'sail': 12
         })
+        self.yourShipFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 12, 13, 4, "Your Ship"))
+        for k in ['r', 'br', 'b', 'bl', 'l']:
+            self.yourShipFrame._chars[k] = " "
+        self.yourShipFrame._chars['tl'] = libtcod.CHAR_HLINE
+        self.yourShipFrame._chars['tr'] = libtcod.CHAR_HLINE
+
+        self.yourShipFrame.addElement(Elements.Label(0, 1, "Value"))
+        self.yourShipFrame.addElement(Elements.Label(0, 2, "Hull Dmg"))
+        self.yourShipFrame.addElement(Elements.Label(0, 3, "Sail Dmg"))
+        self.yourShipValue = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 5, 1, "00000"))
+        self.yourShipHullDmg = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 3, 2, "000"))
+        self.yourShipSailDmg = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 3, 3, "000"))
 
         ### Brothel
         brothelText = "Treat the crew to a wild night. Expensive, but great for morale!"
@@ -953,6 +1046,9 @@ class PlayState(GameState):
         self.cannonballOnShip.setDefaultForeground(Colors.brass)
         self.chainshotOnShip.setDefaultForeground(Colors.brass)
 
+        self.yourShipFrame.setDefaultColors(Colors.lighter_sepia, Colors.darkest_sepia, True)
+
+
         # Tavern Colors
         self.buyARoundLabel.setDefaultForeground(Colors.lighter_sepia)
         self.hireCrewLabel.setDefaultForeground(Colors.lighter_sepia)
@@ -995,10 +1091,35 @@ class PlayState(GameState):
         self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
             setDefaultForeground(Colors.dark_red)
 
+    def showPause(self):
+        mixer.music.pause()
+        self.addView(self.pauseMenu)
+        self.paused = True
+
+    def cancelPause(self):
+        mixer.music.unpause()
+        self.paused = False
+        self.removeView()
+
     def setupInputs(self):
         def killKrew(self):
             self.player.ship.crew -= 1
+            if self.player.ship.crew < 0:
+                self.player.ship.crew = 0
         # Inputs. =================================================================================
+        self.pauseMenu.setKeyInputs({
+            # TODO remove
+            'quit': {
+                'key': None,
+                'ch': 'q',
+                'fn': self.quit
+            },
+            'back': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.cancelPause
+            },
+        })
         self.view.setKeyInputs({
             #TODO remove
             'KILL': {
@@ -1006,10 +1127,10 @@ class PlayState(GameState):
                 'ch': 'K',
                 'fn': lambda: killKrew(self)
             },
-            'quit': {
+            'pause': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': self.showPause
             },
             'showLogModal': {
                 'key': Keys.Tab,
@@ -1082,6 +1203,11 @@ class PlayState(GameState):
 
         })
 
+        self.view.setMouseInputs({
+            'lClick': self.fireCannon,
+            'rClick': self.fireChain
+        })
+
         self.logModal.setKeyInputs({
             'hideModal': {
                 'key': Keys.Tab,
@@ -1119,10 +1245,10 @@ class PlayState(GameState):
                 'fn': self.getScore
             },
 
-            'quit': {
+            'pause': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': self.showPause
             },
             'castOff': {
                 'key': None,
@@ -1353,6 +1479,32 @@ class PlayState(GameState):
             }
         })
 
+    def fire(self, mouse, left=True):
+        if not (self.player and self.player.ship):
+            return
+        charSize = libtcod.sys_get_char_size()
+        x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
+
+        if x == -1 or y == -1:
+            return
+
+        if self.player.ship.canFire(x, y):
+            if left:
+                self.player.ship.fireCannon(x, y)
+            else:
+                self.player.ship.fireChain(x, y)
+
+        #TODO remove
+        c = self.map.getCell(x, y)
+        if c.entity:
+            print c.entity
+
+    def fireChain(self, mouse):
+        self.fire(mouse, left=False)
+
+    def fireCannon(self, mouse):
+        self.fire(mouse, left=True)
+
     def gossip(self):
         if not len(self.currentCity.news):
             news = "Seems pretty quiet 'round here"
@@ -1391,8 +1543,10 @@ class PlayState(GameState):
         rate = (crew + 1)
         if self.player.gold >= rate:
             increase = config.tavern['drinkMorale']
-            self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
-            self.player.moraleAdjust(increase)
+            if not self.player.moraleAdjust(increase):
+                self.cityMsgs.message("The crew couldn't be much happier. They'll gladly keep drinking, though!")
+            else:
+                self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
             self.player.gold -= rate
             self.updateCityUI()
 
@@ -1481,8 +1635,17 @@ class PlayState(GameState):
 
     def buyShip(self):
         shipType, stats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
-        if self.player.buyShip(shipType, stats):
+        result = self.player.buyShip(shipType, stats)
+        if result is not False:
+            salePrice, goodsPrice = result[0], result[1]
+            print "sale, goods: {},{}".format(salePrice, goodsPrice)
             self.cityMsgs.message("Bought a new {}!".format(shipType))
+
+            if salePrice:
+                self.cityMsgs.message("Sold old ship for {}".format(salePrice))
+
+            if goodsPrice:
+                self.cityMsgs.message("Sold goods for {}".format(goodsPrice))
             self.shipyardMenu.selected = 0
             self.updateCityUI()
         else:
@@ -1767,6 +1930,8 @@ class PlayState(GameState):
 
     @staticmethod
     def quit():
+        mixer.music.stop()
+        mixer.quit()
         print "Quitting"
         sys.exit()
 

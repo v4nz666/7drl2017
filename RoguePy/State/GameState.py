@@ -16,6 +16,7 @@ class GameState(object):
     self.handlerQueue = []
     
     self.focused = None
+    self.paused = False
 
   # Clear all existing views, and create one covering the entire ui
   def initView(self, ui):
