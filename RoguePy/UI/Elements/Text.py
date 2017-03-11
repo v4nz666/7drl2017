@@ -15,6 +15,7 @@ class Text(Element):
   def setText(self, text):
     self._text = text
     self.setDirty()
+    return self
     
   def draw(self):
     libtcod.console_print_rect(self.console, 0, 0, self.width, self.height, self._text)

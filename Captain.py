@@ -17,8 +17,7 @@ class Captain(object):
         self.ship = ship
         self.skills = {
             'nav': randint(10),
-            'gun': randint(10),
-            'charisma': randint(10)
+            'gun': randint(10)
         }
         self.gold = 0
         self.lastCity = None

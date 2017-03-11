@@ -1,6 +1,10 @@
 #TODO set this to a reasonable value
-fps = 999
+fps = 90
 spf = 1.0/fps
+
+maxSails = 10
+sailStep = 1.0 / maxSails
+speedAdjust = 0.075
 
 layout = {
     'uiWidth': 75,
@@ -14,7 +18,7 @@ world = {
 }
 
 wind = {
-    'impact': 0.1,
+    'impact': 0.075,
     'maxSpeed': 20.0,
     'speedJitter': 1.0,
     'dirJitter': 5.0
@@ -95,7 +99,4 @@ damage = {
     'rocks': 5
 }
 
-maxSails = 10
-sailStep = 1.0 / maxSails
 
-speedAdjust = 0.1

@@ -47,13 +47,14 @@ class StateManager():
     state = self._currentState
 
     handlers = state.tickHandlers
-    for h in handlers:
-      handler = state.tickHandlers[h]
-      if not handler.enabled:
-        continue
-      if not self.tick % handler.interval:
-        handler.run()
-    state.purgeHandlers()
+    if self.tick:
+      for h in handlers:
+        handler = state.tickHandlers[h]
+        if not handler.enabled:
+          continue
+        if not self.tick % handler.interval:
+          handler.run()
+      state.purgeHandlers()
 
     self.tick += 1
 

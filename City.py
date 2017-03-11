@@ -152,9 +152,10 @@ class City(Entity):
             mul = 0.5
 
         base = config.economy['basePrice'][item]
-        rand = randfloat(0.9, 1.1)
-        buyPrice = int(base * config.economy['buyMul'] * mul * rand)
-        sellPrice = int(base * config.economy['sellMul'] * mul * rand)
+
+        buyPrice = int(base * config.economy['buyMul'] * mul * randfloat(0.9, 1.1))
+        sellPrice = int(base * config.economy['sellMul'] * mul * randfloat(0.9, 1.1))
+        sellPrice = min(sellPrice, buyPrice)
         return buyPrice, sellPrice
 
     def getGoods(self):

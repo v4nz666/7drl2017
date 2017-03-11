@@ -46,6 +46,7 @@ class PlayState(GameState):
         self.addHandler('aiUpdate', 10, self.aiUpdate, False)
 
         self.addHandler('generateNews', config.fps * 10, self.generateNews)
+        self.addHandler('citiesUpdate', config.fps * 60, self.citiesUpdate)
         self.addHandler('generateCaptains', config.captains['genDelay'], self.generateCaptains, False)
 
     def enableGameHandlers(self):
@@ -72,6 +73,16 @@ class PlayState(GameState):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+
+    def citiesUpdate(self):
+        for c in self.map.cities:
+            city = self.map.cities[c]
+            if city == self.currentCity:
+                continue
+            city.gold += randint(city.size * 1000)
+
+        if self.currentCity is not None:
+            self.updateCityUI()
 
     def generateCaptains(self):
         #TODO generate a random number
@@ -176,19 +187,22 @@ class PlayState(GameState):
         self.goldLabel.setLabel(str(self.player.gold).zfill(5))
         self.repLabel.setLabel(self.player.rep)
 
+        self.captainsName.setText(self.player.name).setDefaultForeground(Colors.white)
+
         for k in self.player.skills.keys():
             getattr(self, "{}Label".format(k)).setLabel(str(self.player.skills[k]).zfill(3))
 
         if self.player.ship:
-            crewStr = "{}({})".format(self.player.ship.crew, self.player.ship.stats['maxCrew'])
-            crewStr = "{:>8}".format(crewStr)
+            self.myShipTypeLabel.setLabel("{:>11}".format("({})".format(self.player.ship.name)))
 
+            crewStr = "{:>3}".format(self.player.ship.crew)
             crewClr = Colors.dark_green
             if self.player.ship.crew < self.player.ship.stats['minCrew']:
                 crewClr = Colors.dark_red
 
-            self.myShipTypeLabel.setLabel("{:>11}".format("({})".format(self.player.ship.name)))
-            self.crewMaxLabel.setLabel(crewStr).setDefaultForeground(crewClr)
+            self.crewCountLabel.setLabel(crewStr).setDefaultForeground(crewClr)
+            self.crewMinLabel.setLabel(self.player.ship.stats['minCrew'])
+            self.crewMaxLabel.setLabel(self.player.ship.stats['maxCrew'])
             self.moraleLabel.setLabel(self.player.morale, True) \
                 .setDefaultForeground(getColor(100 - self.player.morale))
 
@@ -282,8 +296,9 @@ class PlayState(GameState):
             ship.x = self.map.width - 1
         if ship.mapY < 0:
             ship.y = 0
-        elif ship.mapY >= self.map.height:
-            ship.y = self.map.height - 1
+        # HACK! Keep ships off the dreaded bottom-right corner
+        elif ship.mapY >= self.map.height - 1:
+            ship.y = self.map.height - 2
 
         if ship.mapX == oldX and ship.mapY == oldY:
             return False
@@ -296,6 +311,7 @@ class PlayState(GameState):
             ship.x = oldX
             ship.y = oldY
             return False
+
         self.map.removeEntity(ship, oldX, oldY)
         self.map.addEntity(ship, ship.mapX, ship.mapY)
         self.mapElement.setDirty(True)
@@ -649,55 +665,65 @@ class PlayState(GameState):
             setDefaultForeground(Colors.brass)
 
         self.infoPanel.addElement(Elements.Label(2, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 11, "Gold")).setDefaultForeground(Colors.gold)
-        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 11, "      ")). \
+        self.captainsName = self.infoPanel.addElement(Elements.Text(1, 11, self.infoPanel.width - 2, 4, ""))
+        self.infoPanel.addElement(Elements.Label(1, 14, "Gold")).setDefaultForeground(Colors.gold)
+        self.goldLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 7, 14, "      ")). \
             setDefaultForeground(Colors.gold)
-        self.infoPanel.addElement(Elements.Label(1, 12, "Rep")).setDefaultForeground(Colors.lighter_azure)
-        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 12, "000")). \
+        self.infoPanel.addElement(Elements.Label(1, 15, "Rep")).setDefaultForeground(Colors.lighter_azure)
+        self.repLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 13, "Skills")).setDefaultForeground(Colors.darker_flame)
-        self.infoPanel.addElement(Elements.Label(1, 14, "Nav")).setDefaultForeground(Colors.lighter_azure)
-        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 14, "000")). \
+        self.infoPanel.addElement(Elements.Label(2, 16, "Skills")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(1, 17, "Nav")).setDefaultForeground(Colors.lighter_azure)
+        self.navLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 17, "000")). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 15, "Gun")).setDefaultForeground(Colors.lighter_azure)
-        self.gunLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 15, "000")). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 16, "Char")).setDefaultForeground(Colors.lighter_azure)
-        self.charismaLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 16, "000")). \
+        self.infoPanel.addElement(Elements.Label(1, 18, "Gun")).setDefaultForeground(Colors.lighter_azure)
+        self.gunLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 18, "000")). \
             setDefaultForeground(Colors.azure)
 
-        self.infoPanel.addElement(Elements.Label(2, 18, "SHIP")).setDefaultForeground(Colors.flame)
-        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 18, "{:>11}".format("")))\
+
+
+        self.infoPanel.addElement(Elements.Label(2, 19, "SHIP")).setDefaultForeground(Colors.flame)
+        self.myShipTypeLabel = self.infoPanel.addElement(Elements.Label(6, 19, "{:>11}".format("")))\
             .setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 19, "Crew(max)")).setDefaultForeground(Colors.lighter_azure)
-        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 9, 19, "{:>8}".format(""))). \
-            setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 20, "Morale")).setDefaultForeground(Colors.lighter_azure)
-        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 20, "   ")). \
-            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(2, 20, "Crew")).setDefaultForeground(Colors.darker_flame)
 
-        self.infoPanel.addElement(Elements.Label(2, 24, "AMMO")).setDefaultForeground(Colors.flame)
-        self.infoPanel.addElement(Elements.Label(1, 25, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
-        self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 25, "   ")). \
+        self.infoPanel.addElement(Elements.Label(1, 21, "On Board")).setDefaultForeground(Colors.lighter_azure)
+        self.crewCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 21, "{:>3}".format(""))). \
             setDefaultForeground(Colors.azure)
-        self.infoPanel.addElement(Elements.Label(1, 26, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
-        self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "   ")). \
+        self.infoPanel.addElement(Elements.Label(1, 22, "Min")).setDefaultForeground(Colors.lighter_azure)
+        self.crewMinLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 22, "{:>3}".format(""))). \
             setDefaultForeground(Colors.azure)
-
-        self.infoPanel.addElement(Elements.Label(2, 28, "CARGO")).setDefaultForeground(Colors.flame)
-        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 29, self.infoPanel.width - 2, 6)) \
-            .setDefaultForeground(Colors.lighter_azure)
+        self.infoPanel.addElement(Elements.Label(1, 23, "Max")).setDefaultForeground(Colors.lighter_azure)
+        self.crewMaxLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 23, "{:>3}".format(""))). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 24, "Morale")).setDefaultForeground(Colors.lighter_azure)
+        self.moraleLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 24, "   ")). \
+            setDefaultForeground(Colors.azure)
         
-        self.infoPanel.addElement(Elements.Label(2, 35, "DAMAGE")).setDefaultForeground(Colors.flame)
-        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 36, "Hull"))\
+        self.infoPanel.addElement(Elements.Label(2, 25, "Damage")).setDefaultForeground(Colors.darker_flame)
+        self.hullDamageLabel = self.infoPanel.addElement(Elements.Label(1, 26, "Hull"))\
             .setDefaultForeground(util.getColor(100))
-        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 36, "n/a"))\
+        self.hullDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 26, "n/a"))\
             .setDefaultForeground(util.getColor(100))
-        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 37, "Sail"))\
+        self.sailDamageLabel = self.infoPanel.addElement(Elements.Label(1, 27, "Sail"))\
             .setDefaultForeground(util.getColor(100))
-        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 37, "n/a"))\
+        self.sailDamageVal = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 27, "n/a"))\
             .setDefaultForeground(util.getColor(100))
+
+
+        self.infoPanel.addElement(Elements.Label(2, 28, "AMMO")).setDefaultForeground(Colors.darker_flame)
+        self.infoPanel.addElement(Elements.Label(1, 29, "Cannonball")).setDefaultForeground(Colors.lighter_azure)
+        self.cannonballCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 29, "   ")). \
+            setDefaultForeground(Colors.azure)
+        self.infoPanel.addElement(Elements.Label(1, 30, "Chainshot")).setDefaultForeground(Colors.lighter_azure)
+        self.chainshotCountLabel = self.infoPanel.addElement(Elements.Label(self.infoPanel.width - 4, 30, "   ")). \
+            setDefaultForeground(Colors.azure)
+
+        self.infoPanel.addElement(Elements.Label(2, 31, "CARGO")).setDefaultForeground(Colors.darker_flame)
+        self.goodsDict = self.infoPanel.addElement(Elements.Dict(1, 32, self.infoPanel.width - 2, 6)) \
+            .setDefaultForeground(Colors.lighter_azure)
+
 
         self.helpPanel = self.view.addElement(Elements.Frame(55, 40, 20, 10, "Help"))
         self.helpPanel.addElement(Elements.Label(1, 1, "Lt/Rt")).setDefaultForeground(Colors.dark_green)
@@ -998,6 +1024,8 @@ class PlayState(GameState):
     def setupInputs(self):
         def killKrew(self):
             self.player.ship.crew -= 1
+            if self.player.ship.crew < 0:
+                self.player.ship.crew = 0
         # Inputs. =================================================================================
         self.view.setKeyInputs({
             #TODO remove
