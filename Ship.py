@@ -4,7 +4,7 @@ import config
 from RoguePy.libtcod import libtcod
 from RoguePy.Game import Entity
 from shipTypes import shipTypes
-
+from util import randint
 
 class Ship(Entity):
     def __init__(self, map, type, x, y, isPlayer=False, stats=None):
@@ -20,8 +20,30 @@ class Ship(Entity):
         self.isPlayer = isPlayer
         self.x = x
         self.y = y
+        self.sunk = False
+        
+        self.maxSails = config.maxSails
+        
+        placed = False
+        attempts = 0
+        while not placed:
+            try:
+                super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'], True, 8, isPlayer)
+                placed = True
+            except:
+                dx, dy = 0, 0
+                while not (dx or dy):
+                    dx = randint(1, -1)
+                    dy = randint(1, -1)
+                # failed attempt (no water, don't count it)
+                if not map.getCell(self.mapX + dx, self.mapY + dy).terrain.passable:
+                    continue
 
-        super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'], True, 8, isPlayer)
+                attempts += 1
+                print "trying again"
+                if attempts >= 10:
+                    print "too many tries, aborting"
+                    raise ShipPlacementError
 
         self.anchored = True
         self.heading = 0.0
@@ -43,6 +65,19 @@ class Ship(Entity):
         }
 
         self.inHold = 0
+    
+    def damageHull(self, dmg):
+        self.stats['hullDamage'] += dmg
+        if self.stats['hullDamage'] >= 100:
+            self.stats['hullDamage'] = 100
+            self.sunk = True
+    
+    def damageSails(self, dmg):
+        self.stats['sailDamage'] += dmg
+        if self.stats['sailDamage'] >= 100:
+            self.stats['sailDamage'] = 100
+        self.maxSails = int(self.stats['sailDamage']/100.0 * config.maxSails)
+        print "Sails damaged by {}. New max {}".format(dmg, self.maxSails)
 
     @staticmethod
     def getBuyPrice(stats):
@@ -114,14 +149,21 @@ class Ship(Entity):
         self.__y = y
         self.mapY = int(round(y))
 
+    @property
+    def sails(self):
+        return self.__sails
+    @sails.setter
+    def sails(self, sails):
+        self.__sails = sails
+        self.speed = config.sailStep * self.__sails * self.stats['maxSpeed']
+
     def toggleAnchor(self):
         self.anchored = not self.anchored
 
     def sailAdjust(self, step):
-        newSails = max(min(self.sails + step, config.maxSails), 0)
+        newSails = max(min(self.sails + step, self.maxSails), 0)
         if newSails != self.sails:
             self.sails = newSails
-            self.speed = config.sailStep * self.sails * self.stats['maxSpeed']
 
     def headingAdjust(self, val):
         self.heading += val
@@ -146,3 +188,7 @@ class Ship(Entity):
         if self.stats['sailDamage'] < 0:
             self.stats['sailDamage'] = 0
         return True
+
+class ShipPlacementError(Exception):
+    pass
+

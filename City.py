@@ -39,7 +39,9 @@ class City(Entity):
         self.crewAvailable = randint(20, 5) * self.size
 
     def __str__(self):
-        return '{}[{}] at {}, {}\n  Shops: {}\n Port: {}, {}'.format(self.name, self.size, self.x, self.y, self.shops, self.portX, self.portY)
+        return '{}[{}] at {}, {}\n  Shops: {}\n Port: {}, {}: {}'\
+            .format(self.name, self.size, self.x, self.y, self.shops,
+                    self.portX, self.portY, self.map.getCell(self.portX, self.portY))
 
     def generateNews(self):
         if randfloat(1) < 0.5:
@@ -79,7 +81,7 @@ class City(Entity):
         item = goods[randint(len(goods) - 1)]
         print "{} surplus at {}".format(item, self.name)
         print "old price {}".format(self.prices[item])
-        quantity = randint(config.economy['surplusThreshold'], config.economy['highThreshold'])
+        quantity = randint(config.economy['surplusThreshold'] * 2, config.economy['surplusThreshold'])
         self.goods[item] = quantity
         self.prices[item] = self.calculateBuySellPrice(item)
         print "new price {}".format(self.prices[item])

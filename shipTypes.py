@@ -1,4 +1,6 @@
 from RoguePy.UI import Colors
+from util import randint
+
 shipTypes = {
     "Ship o'Line": {
         'maxSpeed': 25,
@@ -100,3 +102,7 @@ shipTypes = {
         'color': Colors.white
     }
 }
+
+def getRandomType():
+    types = shipTypes.keys()
+    return types[randint(len(types) - 1)]

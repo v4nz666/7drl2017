@@ -111,7 +111,7 @@ class Map:
             if len(neighbours):
                 return neighbours
             else:
-                return False
+                return {}
 
     def getNeighbours(self, x, y, diagonals=True):
         cells = {}
@@ -152,6 +152,8 @@ class Map:
 
         self.cities[name] = c
 
+        return c
+
     def getMajorCities(self):
         cities = []
         for name in self.cities:
@@ -160,7 +162,7 @@ class Map:
                 cities.append(city)
         return cities
 
-    def initCitiesFov(self):
+    def initCityNeighbours(self):
         for source in self.cities:
             neighbours = []
             city = self.cities[source]

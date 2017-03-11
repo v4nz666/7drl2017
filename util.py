@@ -1,3 +1,4 @@
+import config
 from RoguePy.UI import Colors
 from RoguePy.libtcod import libtcod
 from math import pi, atan2
@@ -32,7 +33,6 @@ colorMap = libtcod.color_gen_map(colors, indexes)
 
 # Returns a red -> green gradient color for values 0 - 100
 def getColor(val):
-    print "Getting color for {}".format(val)
     return colorMap[val]
 
 def getPirateName():
@@ -149,3 +149,47 @@ def getPirateName():
         first[randint(len(first) - 1)], middle[randint(len(middle) - 1)], last[randint(len(last) - 1)])
 
 
+def pathFunc(x1, y1, x2, y2, map):
+
+    c = map.getCell(x2, y2)
+    if not c:
+        return 0
+    if c.terrain.passable:
+        return 1
+    else:
+        return 0
+
+def getPath(map):
+    path = libtcod.path_new_using_function(config.world['width'], config.world['height'], pathFunc, map, 0)
+    return path
+
+def checkPath(map, x1, y1, x2, y2, myPath=None):
+    if not myPath:
+        path = getPath(map)
+        delete = True
+    else:
+        path = myPath
+        delete = False
+
+    c1 = map.getCell(x1, y1)
+    c2 = map.getCell(x2, y2)
+    # print "Computing from {},{} {} to {},{} {}".format(x1, y1, c1, x2, y2, c2)
+
+    libtcod.path_compute(path, x1, y1, x2, y2)
+    s = libtcod.path_size(path)
+    if delete:
+        deletePath(path)
+    if s:
+        # print "Got path, length", s
+        return True
+    else:
+        return False
+
+def pathSize(path):
+    return libtcod.path_size(path)
+
+def deletePath(path):
+    libtcod.path_delete(path)
+
+def pathWalk(path):
+    return libtcod.path_walk(path, True)

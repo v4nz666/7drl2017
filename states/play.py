@@ -1,4 +1,5 @@
-from shipTypes import shipTypes
+import util
+from shipTypes import shipTypes, getRandomType
 from util import randfloat, degToRad, randint, getColor
 from math import sin, cos
 from Captain import Captain
@@ -14,7 +15,7 @@ from RoguePy.libtcod import libtcod
 import config
 import sys
 
-from Ship import Ship
+from Ship import Ship, ShipPlacementError
 
 __author__ = 'jripley'
 
@@ -31,6 +32,8 @@ class PlayState(GameState):
         self.windEffectX = 0.0
         self.windEffectY = 0.0
 
+        self.captains = []
+
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
         self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
         self.addHandler('shipsUpdate', 1, self.shipsUpdate, False)
@@ -40,11 +43,15 @@ class PlayState(GameState):
         self.addHandler('foodUpdate', config.fps * 15, self.foodUpdate, False)
         self.addHandler('rumUpdate', config.fps * 20, self.rumUpdate, False)
 
-        #TODO decrease frequency
-        self.addHandler('generateNews', config.fps, self.generateNews)
+        self.addHandler('aiUpdate', 10, self.aiUpdate, False)
+
+        self.addHandler('generateNews', config.fps * 10, self.generateNews)
+        self.addHandler('generateCaptains', config.captains['genDelay'], self.generateCaptains, False)
 
     def enableGameHandlers(self):
         self.enableHandler('generateNews')
+        self.enableHandler('generateCaptains')
+        self.enableHandler('aiUpdate')
         self.enableHandler('daysAtSea')
         self.enableHandler('foodUpdate')
         self.enableHandler('rumUpdate')
@@ -53,6 +60,8 @@ class PlayState(GameState):
 
     def disableGameHandlers(self):
         self.disableHandler('generateNews')
+        self.disableHandler('generateCaptains')
+        self.disableHandler('aiUpdate')
         self.disableHandler('daysAtSea')
         self.disableHandler('foodUpdate')
         self.disableHandler('rumUpdate')
@@ -64,9 +73,53 @@ class PlayState(GameState):
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
 
+    def generateCaptains(self):
+        #TODO generate a random number
+        count = 1
+        cityFails = 0
+        while count and len(self.captains) < config.captains['maxCount']:
+            if randfloat(1) >= config.captains['genThreshold']:
+                print "skipping captain generation"
+                continue
+            neighbours = []
+
+            while not len(neighbours):
+                city = self.map.cities[self.map.cities.keys()[randint(len(self.map.cities) - 1)]]
+                neighbours = city.neighbours
+            print "Got city {}".format(city.name)
+            captain = Captain()
+            shipType = getRandomType()
+            print "creating ship"
+            try:
+                ship = Ship(self.map, shipType, city.portX, city.portY)
+            except ShipPlacementError:
+                print 'failed to place ship, trying a new city'
+                cityFails += 1
+                if cityFails >= 10:
+                    print "Too many city fails!"
+                    break
+                continue
+            cityFails = 0
+
+            captain.setShip(ship)
+            captain.lastCity = city
+
+            destination = neighbours[randint(len(neighbours) - 1)]
+            if not captain.setDestination(destination):
+                print "failed to find a destination"
+            else:
+                self.captains.append(captain)
+
+                cell = self.map.getCell(ship.mapX, ship.mapY)
+                if cell and not cell.entity:
+                    self.map.addEntity(ship, ship.mapX, ship.mapY)
+
+                print "Added new captain [{}][{}] at {}-{},{} => {}-{},{}".format(captain.name, shipType, city.name, city.portX, city.portY, destination.name, destination.portX, destination.portY)
+            count -= 1
+
     def generateNews(self):
         cities = self.map.cities
-        newsCount = randint(len(cities) / 6)
+        newsCount = randint(len(cities) / 5)
         print "Generating up to {} news items".format(newsCount)
         while newsCount:
             if randfloat(1) < config.news['genThreshold']:
@@ -78,7 +131,7 @@ class PlayState(GameState):
     def daysAtSea(self):
         if not (self.player and self.player.atSea):
             return
-        print "Day at sea [{}]".format(config.morale['daysAtSea'])
+        print "Day at sea [-{}]".format(config.morale['daysAtSea'])
         self.player.daysAtSea += 1
         self.player.morale -= config.morale['daysAtSea']
         if self.player.morale <= 0:
@@ -151,15 +204,69 @@ class PlayState(GameState):
 
     def shipsUpdate(self):
         self.playerUpdate()
+        self.aiUpdate()
 
     def playerUpdate(self):
         if self.player.ship:
             self.moveShip(self.player.ship)
 
+    def aiUpdate(self):
+        toPurge = []
+        for c in self.captains:
+            if c.dead:
+                print "{} DIED!".format(c.name)
+                c.lastCity.addNews("{} was lost at sea.".format(c.name))
+                toPurge.append(c)
+                continue
+            if c.ship.sunk:
+                print "{} Sunk!".format(c.name)
+                toPurge.append(c)
+                continue
+            if not c.path:
+                print "{} has no path".format(c.name)
+                c.ship.anchored = True
+            elif not util.pathSize(c.path):
+                print "Reached destination!"
+                toPurge.append(c)
+            elif c.recalculateHeading:
+                c.recalculateHeading = False
+                c.sinceRecalc = 0
+                c.ship.anchored = False
+                util.checkPath(self.map, c.ship.mapX, c.ship.mapY, c.destination.portX, c.destination.portY, c.path)
+
+                if not util.pathSize(c.path):
+                    print "couldn't repath. Killing"
+                    c.dead = True
+                x1, y1 = c.ship.mapX, c.ship.mapY
+                x2, y2 = util.pathWalk(c.path)
+                if x2 is None:
+                    # TODO a little harsh, perhaps
+                    c.dead = True
+                    continue
+
+                heading = int(util.bearing(x1, y1, x2, y2))
+                c.ship.heading = heading
+                # TODO full speed all the time?
+                c.ship.sails = config.maxSails
+            if self.moveShip(c.ship):
+                if c.sinceRecalc >= config.captains['fovRecalcCooldown']:
+                    c.recalculateHeading = True
+                c.sinceRecalc += 1
+
+
+
+
+        for c in toPurge:
+            print "Purging {}".format(c.name)
+            self.captains.remove(c)
+            util.deletePath(c.path)
+            self.map.removeEntity(c.ship, c.ship.mapX, c.ship.mapY)
+
+
+
     def moveShip(self, ship):
         if ship.anchored:
             return False
-
         dx = config.spf * cos(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectX
         dy = config.spf * sin(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectY
         oldX = ship.mapX
@@ -181,7 +288,9 @@ class PlayState(GameState):
 
         destination = self.map.getCell(ship.mapX, ship.mapY)
         if destination and destination.type is not 'water':
-            print "You're probably dead!"
+
+            ship.damageHull(config.damage['rocks'])
+
             ship.x = oldX
             ship.y = oldY
             return False
@@ -1562,8 +1671,9 @@ class PlayState(GameState):
         startingCity = cities[index]
 
         types = ['Caravel', 'Sloop']
-        for i in range(randint(3)):
+        for i in range(randint(3, 1)):
             shipType = types[randint(1)]
+
             self.spawnShipAtCity(startingCity, shipType)
 
         # Close intro modal
@@ -1637,22 +1747,3 @@ class PlayState(GameState):
         print "Quitting"
         sys.exit()
 
-
-    # TODO: UTIL Stuff.. shouldn't be here
-    def checkPath(self, x1, y1, x2, y2):
-        path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc)
-
-        libtcod.path_compute(path, x1, y1, x2, y2)
-        s = libtcod.path_size(path)
-        libtcod.path_delete(path)
-        if s:
-            print "Got path, length", s
-            return True
-        else:
-            return False
-
-    def pathFunc(self, x1, y1, x2, y2, blech):
-        c = self.map.getCell(x2, y2)
-        if not c:
-            return 0
-        return int(c.terrain.passable)

@@ -27,7 +27,7 @@ city = {
         'brothel',
         'shipyard'
     ],
-    'viewRadius': 20
+    'viewRadius': 30
 }
 
 brothel = {
@@ -80,6 +80,17 @@ economy = {
 news = {
     'genThreshold': 0.4,
     'propogateThreshold': 0.6
+}
+
+captains = {
+    'genDelay': fps * 30,
+    'genThreshold': 0.5,
+    'maxCount': 10,
+    'fovRecalcCooldown': 2
+}
+
+damage = {
+    'rocks': 5
 }
 
 maxSails = 10

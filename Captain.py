@@ -1,12 +1,17 @@
+import sys
+
+from RoguePy.libtcod import libtcod
+
 import config
+import util
 from Ship import Ship
-from util import randint, getColor
+from util import randint, getColor, getPirateName
 
 
 class Captain(object):
     def __init__(self, ship=None):
         # TODO replace with name generation
-        self.name = "Captain"
+        self.name = getPirateName()
         self.morale = 50
         self.rep = 0
         self.ship = ship
@@ -21,16 +26,36 @@ class Captain(object):
         self.daysWithoutFood = 0
         self.daysAtSea = 0
 
-        self.setMoraleColor()
+        self.recalculateHeading = True
+        self.sinceRecalc = 0
+
+        self.destination = None
+        self.path = None
+
+        self.dead = False
+
+    def setDestination(self, destination):
+        self.destination = destination
+        self.path = util.getPath(self.ship.map)
+        util.checkPath(self.ship.map, self.ship.mapX, self.ship.mapY, destination.portX, destination.portY, self.path)
+        if not util.pathSize(self.path):
+            print "No path to destination [{}]. Setting back to home port[{}].".format(destination.name, self.lastCity.name)
+            self.destination = self.lastCity
+            util.checkPath(self.ship.map, self.ship.mapX, self.ship.mapY, self.lastCity.portX, self.lastCity.portY, self.path)
+            if not util.pathSize(self.path):
+                print "No path anywhere. {}".format(libtcod.path_is_empty(self.path))
+                self.dead = True
+                return False
+        print "got a path! {}".format(libtcod.path_size(self.path))
+        return True
+
+    def __str__(self):
+        return "Captain {}".format(self.name)
 
     def returnToPort(self):
         increase = int(self.daysAtSea * config.morale['daysAtSeaReturn'])
         print "Morale boosted by {}".format(increase)
         self.moraleAdjust(increase)
-
-
-    def setMoraleColor(self):
-        self.moraleColor = getColor(self.morale)
 
     def setCity(self, city):
         self.lastCity = city
@@ -84,7 +109,6 @@ class Captain(object):
             self.morale = 100
         if self.morale < 0:
             self.morale = 0
-        self.setMoraleColor()
 
     def sellShip(self):
         value = Ship.getSellPrice(self.ship.stats)

@@ -223,7 +223,7 @@ class GenerateState(GameState):
 
             print 'Placed city at {}, {}. {} left'.format(x, y, cityCount)
             cityCount -= 1
-        self.map.initCitiesFov()
+        self.map.initCityNeighbours()
 
     def getOceanCorner(self):
         maxX = self.map.width - 1
@@ -232,38 +232,20 @@ class GenerateState(GameState):
         print "wh, xy", self.map.width, self.map.height, maxX, maxY
 
         c = self.map.getCell(0, 0)
-        if c and c.type == "water" and self.checkPath(0, 0, maxX, maxY):
+        if c and c.type == "water" and util.checkPath(self.map, 0, 0, maxX, maxY):
             return 0, 0
         c = self.map.getCell(maxX, 0)
-        if c and c.type == "water" and self.checkPath(maxX, 0, 0, maxY):
+        if c and c.type == "water" and util.checkPath(self.map, maxX, 0, 0, maxY):
             return maxX, 0
         c = self.map.getCell(maxX, maxY)
-        if c and c.type == "water" and self.checkPath(maxX, maxY, 0, 0):
+        if c and c.type == "water" and util.checkPath(self.map, maxX, maxY, 0, 0):
             return maxX, maxY
         c = self.map.getCell(0, maxY)
-        if c and c.type == "water" and self.checkPath(0, maxY, maxX, 0):
+        if c and c.type == "water" and util.checkPath(self.map, 0, maxY, maxX, 0):
             return 0, maxY
 
         # We failed :( but, we didn't try very hard, so it's fine
         return False
-
-    def checkPath(self, x1, y1, x2, y2):
-        path = libtcod.path_new_using_function(self.map.width, self.map.height, self.pathFunc, 0, 0.0)
-
-        libtcod.path_compute(path, x1, y1, x2, y2)
-        s = libtcod.path_size(path)
-        libtcod.path_delete(path)
-        if s:
-            print "Got path, length", s
-            return True
-        else:
-            return False
-
-    def pathFunc(self, x1, y1, x2, y2, blech):
-        c = self.map.getCell(x2, y2)
-        if not c:
-            return 0
-        return int(c.terrain.passable)
 
     def createCity(self, x, y):
         cell = self.map.getCell(x, y)
@@ -273,25 +255,30 @@ class GenerateState(GameState):
             return False
 
         waterNeighbours = self.map.getNeighboursOfType('water', x, y)
-        if not waterNeighbours:
+        if not len(waterNeighbours):
             return False
 
         grassNeighbours = self.map.getNeighboursOfType('grass', x, y)
-        if grassNeighbours:
+        if len(grassNeighbours):
             for nx, ny in grassNeighbours:
                 c = grassNeighbours[nx, ny]
                 if c.entity:
                     print "Neighbouring tile has entity"
                     return False
 
+        city = None
         for nx, ny in waterNeighbours:
-            if not self.checkPath(nx, ny, self.testPoint[0], self.testPoint[1]):
+            if (nx, ny) == (x, y):
+                continue
+            if not util.checkPath(self.map, nx, ny, self.testPoint[0], self.testPoint[1]):
                 print "no path to ocean"
                 continue
             else:
-                self.map.addCity(x, y, nx, ny, self.getCityName())
+                city = self.map.addCity(x, y, nx, ny, self.getCityName())
                 break
-
+        if not city:
+            print "Couldn't path to ocean"
+            return False
         return True
 
     def validMap(self):
