@@ -1632,8 +1632,17 @@ class PlayState(GameState):
 
     def buyShip(self):
         shipType, stats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
-        if self.player.buyShip(shipType, stats):
+        result = self.player.buyShip(shipType, stats)
+        if result is not False:
+            salePrice, goodsPrice = result[0], result[1]
+            print "sale, goods: {},{}".format(salePrice, goodsPrice)
             self.cityMsgs.message("Bought a new {}!".format(shipType))
+
+            if salePrice:
+                self.cityMsgs.message("Sold old ship for {}".format(salePrice))
+
+            if goodsPrice:
+                self.cityMsgs.message("Sold goods for {}".format(goodsPrice))
             self.shipyardMenu.selected = 0
             self.updateCityUI()
         else:

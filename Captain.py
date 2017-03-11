@@ -119,18 +119,21 @@ class Captain(object):
 
         ship = Ship(self.lastCity.map, shipType, self.lastCity.portX, self.lastCity.portY, True, stats)
 
+        salePrice = 0
+        goodsPrice = 0
         if self.ship:
             print "selling goods {}".format(self.ship.goods)
             for item in self.ship.goods.keys():
                 count = self.ship.goods[item]
                 while count:
+                    count -= 1
+                    self.ship.takeGoods(item)
                     # If we can't take it on the new ship,
-                    if self.ship.addGoods(item):
+                    if not ship.addGoods(item):
                         # we'll sell it
+                        goodsPrice += self.lastCity.prices[item][1]
                         self.gold += self.lastCity.prices[item][1]
-                        self.ship.takeGoods(item)
-                        count -= 1
-            self.sellShip()
+            salePrice = self.sellShip()
         self.gold -= newShipValue
         print "new gold {}".format(self.gold)
         self.lastCity.removeShip(shipType, stats)
@@ -138,7 +141,7 @@ class Captain(object):
         self.setShip(ship)
         print "Bought [{}] ship with stats {}. Goods{}".format(shipType, stats, self.ship.goods)
 
-        return True
+        return salePrice, goodsPrice
 
     def moraleAdjust(self, val):
         old = self.morale
@@ -157,4 +160,5 @@ class Captain(object):
         self.lastCity.addShip(self.ship.name, self.ship.stats)
         self.ship.map.removeEntity(self.ship, self.ship.mapX, self.ship.mapY)
         self.ship = None
+        return value
 

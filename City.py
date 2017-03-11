@@ -69,22 +69,23 @@ class City(Entity):
         goods = self.goods.keys()
         item = goods[randint(len(goods) - 1)]
         print "{} shortage at {}".format(item, self.name)
-        print "old price {}".format(self.prices[item])
+        print "old price {}, quantity {}".format(self.prices[item], self.goods[item])
         quantity = randint(config.economy['scarceThreshold'])
         self.goods[item] = quantity
         self.prices[item] = self.calculateBuySellPrice(item)
-        print "new price {}".format(self.prices[item])
+        print "new price {}, quantity {}".format(self.prices[item], self.goods[item])
+
         return item
 
     def surplus(self):
         goods = self.goods.keys()
         item = goods[randint(len(goods) - 1)]
         print "{} surplus at {}".format(item, self.name)
-        print "old price {}".format(self.prices[item])
-        quantity = randint(config.economy['surplusThreshold'] * 2, config.economy['surplusThreshold'])
+        print "old price {}, quantity {}".format(self.prices[item], self.goods[item])
+        quantity = randint(config.economy['surplusThreshold'] * 3, config.economy['surplusThreshold'])
         self.goods[item] = quantity
         self.prices[item] = self.calculateBuySellPrice(item)
-        print "new price {}".format(self.prices[item])
+        print "new price {}, quantity {}".format(self.prices[item], self.goods[item])
         return item
 
     def hireCrewMember(self):
@@ -108,12 +109,12 @@ class City(Entity):
 
         self.gold = randint(1000) * self.size
         self.goods = {
-            'food': randint(config.economy['surplusThreshold']),
-            'rum': randint(config.economy['surplusThreshold']),
-            'wood': randint(config.economy['surplusThreshold']),
-            'cloth': randint(config.economy['surplusThreshold']),
-            'coffee': randint(config.economy['surplusThreshold']),
-            'spice': randint(config.economy['surplusThreshold'])
+            'food': randint(config.economy['highThreshold'] + config.economy['scarceThreshold']),
+            'rum': randint(config.economy['highThreshold'] + config.economy['scarceThreshold']),
+            'wood': randint(config.economy['highThreshold'] + config.economy['scarceThreshold']),
+            'cloth': randint(config.economy['highThreshold'] + config.economy['scarceThreshold']),
+            'coffee': randint(config.economy['highThreshold'] + config.economy['scarceThreshold']),
+            'spice': randint(config.economy['highThreshold'] + config.economy['scarceThreshold'])
         }
 
     def setPrices(self):
@@ -143,13 +144,13 @@ class City(Entity):
         count = self.goods[item]
         mul = 1.0
         if count < config.economy['scarceThreshold']:
-            mul = 2.5
+            mul = 3
         elif count < config.economy['lowThreshold']:
             mul = 1.5
         elif count >= config.economy['highThreshold']:
             mul = 0.75
         elif count >= config.economy['surplusThreshold']:
-            mul = 0.5
+            mul = 0.4
 
         base = config.economy['basePrice'][item]
 
