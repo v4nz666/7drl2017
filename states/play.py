@@ -74,12 +74,13 @@ class PlayState(GameState):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
-        mixer.music.load(os.path.join(path, 'sailing.wav'))
+        mixer.music.stop()
+        mixer.music.queue(os.path.join(path, 'city.wav'))
         mixer.music.play(-1)
-        # see music.fadeout() / queue()
+
 
     def beforeUnload(self):
-        mixer.music.unload()
+        mixer.music.fadeout(500)
 
     def citiesUpdate(self):
         for c in self.map.cities:
@@ -389,6 +390,8 @@ class PlayState(GameState):
         self.headingLabel.setLabel(str(self.player.ship.heading))
 
     def enterCity(self, player, city):
+        mixer.music.load(os.path.join(path, 'city.wav'))
+        mixer.music.play(-1)
         self.disableGameHandlers()
         self.player.returnToPort()
 
@@ -416,6 +419,10 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def castOff(self, ship):
+        mixer.music.stop()
+        mixer.music.load(os.path.join(path, 'sailing.wav'))
+        mixer.music.play(-1)
+
         if not self.player.ship:
             return False
         if self.player.ship.crew < self.player.ship.stats['minCrew']:

@@ -1,4 +1,5 @@
 import util
+from sounds import *
 from RoguePy.Game import Map, Entity
 from RoguePy.UI import Elements
 from RoguePy.UI import Colors
@@ -8,6 +9,7 @@ from RoguePy.libtcod import libtcod
 
 import config
 import sys
+
 
 __author__ = 'jripley'
 
@@ -60,6 +62,7 @@ class GenerateState(GameState):
         self.addHandler('gen', 1, self.generateWorld)
 
     def beforeUnload(self):
+        mixer.music.fadeout(500)
         pass
 
 
@@ -100,7 +103,7 @@ class GenerateState(GameState):
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': sys.exit
+                'fn': self.quit
             },
             'regen': {
                 'key': None,
@@ -298,3 +301,10 @@ class GenerateState(GameState):
         self.manager.getState('play') \
             .setMap(self.map)
         self.manager.setNextState('play')
+
+    @staticmethod
+    def quit():
+        mixer.music.stop()
+        mixer.quit()
+        print "Quitting"
+        sys.exit()
