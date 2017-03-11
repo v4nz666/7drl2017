@@ -46,17 +46,18 @@ class StateManager():
   def doTick(self):
     state = self._currentState
 
-    handlers = state.tickHandlers
-    if self.tick:
-      for h in handlers:
-        handler = state.tickHandlers[h]
-        if not handler.enabled:
-          continue
-        if not self.tick % handler.interval:
-          handler.run()
-      state.purgeHandlers()
+    if not state.paused:
+      handlers = state.tickHandlers
+      if self.tick:
+        for h in handlers:
+          handler = state.tickHandlers[h]
+          if not handler.enabled:
+            continue
+          if not self.tick % handler.interval:
+            handler.run()
+        state.purgeHandlers()
 
-    self.tick += 1
+      self.tick += 1
 
     self.updateUi(state)
     state.processInput()

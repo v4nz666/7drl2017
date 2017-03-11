@@ -583,6 +583,11 @@ class PlayState(GameState):
         self.introMenu = modal.addElement(Elements.Menu(1, modal.height - menuHeight - 1, modal.width - 2, menuHeight, menuItems))
 
         self.introModal.setKeyInputs({
+            'pause': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.showPause
+            },
             'moveUp': {
                 'key': Keys.Up,
                 'ch': 'w',
@@ -738,6 +743,21 @@ class PlayState(GameState):
 
         halfX = self.view.width / 2
         halfY = self.view.height / 2
+
+        #### Pause menu
+        pauseX = self.view.width / 2 - 7
+        pauseY = self.view.height / 2 - 2
+        pauseW = 13
+        pauseH = 4
+
+        self.pauseMenu = View(pauseW, pauseH, pauseX, pauseY)
+        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused"))\
+            .setDefaultForeground(Colors.darker_azure)
+        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back"))\
+            .setDefaultForeground(Colors.azure)
+        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit"))\
+            .setDefaultForeground(Colors.azure)
+
 
         #### Captain's Log Modal
         modalX = halfX / 4 - 1
@@ -1021,12 +1041,32 @@ class PlayState(GameState):
         self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
             setDefaultForeground(Colors.dark_red)
 
+    def showPause(self):
+        self.addView(self.pauseMenu)
+        self.paused = True
+    def cancelPause(self):
+        self.paused = False
+        self.removeView()
+
     def setupInputs(self):
         def killKrew(self):
             self.player.ship.crew -= 1
             if self.player.ship.crew < 0:
                 self.player.ship.crew = 0
         # Inputs. =================================================================================
+        self.pauseMenu.setKeyInputs({
+            # TODO remove
+            'quit': {
+                'key': None,
+                'ch': 'q',
+                'fn': self.quit
+            },
+            'back': {
+                'key': Keys.Escape,
+                'ch': None,
+                'fn': self.cancelPause
+            },
+        })
         self.view.setKeyInputs({
             #TODO remove
             'KILL': {
@@ -1034,10 +1074,10 @@ class PlayState(GameState):
                 'ch': 'K',
                 'fn': lambda: killKrew(self)
             },
-            'quit': {
+            'pause': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': self.showPause
             },
             'showLogModal': {
                 'key': Keys.Tab,
@@ -1147,10 +1187,10 @@ class PlayState(GameState):
                 'fn': self.getScore
             },
 
-            'quit': {
+            'pause': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': self.showPause
             },
             'castOff': {
                 'key': None,
