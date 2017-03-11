@@ -11,6 +11,7 @@ from RoguePy.Input import Keys
 from RoguePy.State import GameState
 from RoguePy.UI import View
 from RoguePy.libtcod import libtcod
+from sounds import *
 
 import config
 import sys
@@ -73,6 +74,12 @@ class PlayState(GameState):
         self.manager.updateUi(self)
         self.addView(self.introModal)
         self.addHandler('intro', 1, self.doIntro)
+        mixer.music.load(os.path.join(path, 'sailing.wav'))
+        mixer.music.play(-1)
+        # see music.fadeout() / queue()
+
+    def beforeUnload(self):
+        mixer.music.unload()
 
     def citiesUpdate(self):
         for c in self.map.cities:
@@ -1068,9 +1075,12 @@ class PlayState(GameState):
             setDefaultForeground(Colors.dark_red)
 
     def showPause(self):
+        mixer.music.pause()
         self.addView(self.pauseMenu)
         self.paused = True
+
     def cancelPause(self):
+        mixer.music.unpause()
         self.paused = False
         self.removeView()
 
@@ -1894,6 +1904,8 @@ class PlayState(GameState):
 
     @staticmethod
     def quit():
+        mixer.music.stop()
+        mixer.quit()
         print "Quitting"
         sys.exit()
 
