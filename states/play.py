@@ -231,8 +231,15 @@ class PlayState(GameState):
         self.aiUpdate()
 
     def playerUpdate(self):
-        if self.player.ship:
-            self.moveShip(self.player.ship)
+        if not self.player.ship:
+            return
+
+        if self.player.ship.sunk or self.player.dead:
+            print "YOU DIED!"
+            sys.exit()
+
+        self.moveShip(self.player.ship)
+
 
     def aiUpdate(self):
         toPurge = []
