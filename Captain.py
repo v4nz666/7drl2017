@@ -19,10 +19,14 @@ class Captain(object):
             'nav': randint(10),
             'gun': randint(10)
         }
+
         self.gold = 0
         self.lastCity = None
         self.atSea = False
+
         self.daysWithoutFood = 0
+        self.daysAtSeaTotal = 0
+        self.__daysAtSea = 0
         self.daysAtSea = 0
 
         self.recalculateHeading = True
@@ -32,6 +36,32 @@ class Captain(object):
         self.path = None
 
         self.dead = False
+
+    def updateViewRadius(self):
+        self.ship.viewRadius = min(max(self.skills['nav'], config.ship['minView']), config.ship['maxView'])
+        print "new View radius {}".format(self.ship.viewRadius)
+        self.ship.calculateFovMap()
+
+    @property
+    def daysAtSea(self):
+        return self.__daysAtSea
+    @daysAtSea.setter
+    def daysAtSea(self, val):
+        if not self.atSea:
+            return
+        if self.ship.isPlayer:
+
+            print "setting days at sea to {}".format(val)
+
+        diff = val - self.__daysAtSea
+        self.__daysAtSea = val
+        self.daysAtSeaTotal += diff
+
+        if not self.daysAtSeaTotal % config.skill['navDays']:
+            if self.skills['nav'] < config.skill['max']:
+                self.skills['nav'] += 1
+                self.updateViewRadius()
+                print "Nav skill increase! isPlayer [{}]".format(self.ship.isPlayer)
 
     def setDestination(self, destination):
         self.destination = destination
@@ -69,6 +99,7 @@ class Captain(object):
     def setShip(self, ship):
         print "Setting ship with goods{}".format(ship.goods)
         self.ship = ship
+        self.updateViewRadius()
 
     @property
     def morale(self):
@@ -110,11 +141,13 @@ class Captain(object):
         return True
 
     def moraleAdjust(self, val):
+        old = self.morale
         self.morale += val
         if self.morale > 100:
             self.morale = 100
         if self.morale < 0:
             self.morale = 0
+        return old != self.morale
 
     def sellShip(self):
         value = Ship.getSellPrice(self.ship.stats)

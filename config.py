@@ -95,8 +95,17 @@ captains = {
     'fovRecalcCooldown': 2
 }
 
+skill = {
+    'max': 20,
+    'navDays': 5,
+    'gunWins': 5
+}
+
 damage = {
     'rocks': 5
 }
 
-
+ship = {
+    'minView': 6,
+    'maxView': 20
+}

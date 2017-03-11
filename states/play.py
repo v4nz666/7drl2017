@@ -460,12 +460,22 @@ class PlayState(GameState):
         rateStr = "${}/{}".format(self.currentCity.repairRate, config.shipyard['repairReturn'])
         self.repairRateVal.setLabel(rateStr)
         if self.player.ship:
+            self.yourShipFrame.show()
             hullDamage = self.player.ship.stats['hullDamage']
             sailDamage = self.player.ship.stats['sailDamage']
             hullColor = getColor(hullDamage)
             sailColor = getColor(sailDamage)
             self.repairHullCurrent.setLabel(str(hullDamage)).setDefaultForeground(hullColor)
             self.repairSailCurrent.setLabel(str(sailDamage)).setDefaultForeground(sailColor)
+
+            valueStr = "{:>5}".format(Ship.getSellPrice(self.player.ship.stats))
+            self.yourShipValue.setLabel(valueStr).setDefaultForeground(Colors.gold)
+            hullDmg = self.player.ship.stats['hullDamage']
+            hullStr = "{:>3}".format(hullDmg)
+            self.yourShipHullDmg.setLabel(hullStr).setDefaultForeground(util.getColor(hullDmg))
+            sailDmg = self.player.ship.stats['sailDamage']
+            sailStr = "{:>3}".format(sailDmg)
+            self.yourShipSailDmg.setLabel(sailStr).setDefaultForeground(util.getColor(sailDmg))
 
             if not self.player.ship.goods['wood']:
                 self.notEnoughWood.setDefaultForeground(Colors.darker_red)
@@ -476,6 +486,7 @@ class PlayState(GameState):
             else:
                 self.notEnoughCloth.setDefaultForeground(Colors.darker_green)
         else:
+            self.yourShipFrame.hide()
             self.repairHullCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
             self.repairSailCurrent.setLabel('n/a').setDefaultForeground(Colors.darker_sepia)
 
@@ -890,13 +901,25 @@ class PlayState(GameState):
                                                                          "Up/Dn-Select | Enter buys"))
         self.shipyardMenu = self.shipSaleFrame.addElement(Elements.Menu(1, 2, 12, 13))
         self.shipyardMenu.setWrap(False)
-        self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 2, 13, 13, "Ship Specs"))
-        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 2, 11, 8))
-        self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 9, "Damage"))
-        self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 10, 11, 2)).setItems({
+        self.shipSpecFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 1, 13, 11, "Ship Specs"))
+        self.shipSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 1, 11, 8))
+        self.damageLabel = self.shipSpecFrame.addElement(Elements.Label(4, 7, "Damage"))
+        self.damageSpecs = self.shipSpecFrame.addElement(Elements.Dict(1, 8, 11, 2)).setItems({
             'hull': 85,
             'sail': 12
         })
+        self.yourShipFrame = self.shipSaleFrame.addElement(Elements.Frame(13, 12, 13, 4, "Your Ship"))
+        for k in ['r', 'br', 'b', 'bl', 'l']:
+            self.yourShipFrame._chars[k] = " "
+        self.yourShipFrame._chars['tl'] = libtcod.CHAR_HLINE
+        self.yourShipFrame._chars['tr'] = libtcod.CHAR_HLINE
+
+        self.yourShipFrame.addElement(Elements.Label(0, 1, "Value"))
+        self.yourShipFrame.addElement(Elements.Label(0, 2, "Hull Dmg"))
+        self.yourShipFrame.addElement(Elements.Label(0, 3, "Sail Dmg"))
+        self.yourShipValue = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 5, 1, "00000"))
+        self.yourShipHullDmg = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 3, 2, "000"))
+        self.yourShipSailDmg = self.yourShipFrame.addElement(Elements.Label(self.yourShipFrame.width - 3, 3, "000"))
 
         ### Brothel
         brothelText = "Treat the crew to a wild night. Expensive, but great for morale!"
@@ -998,6 +1021,9 @@ class PlayState(GameState):
         self.csOnShipLabel.setDefaultForeground(Colors.dark_sepia)
         self.cannonballOnShip.setDefaultForeground(Colors.brass)
         self.chainshotOnShip.setDefaultForeground(Colors.brass)
+
+        self.yourShipFrame.setDefaultColors(Colors.lighter_sepia, Colors.darkest_sepia, True)
+
 
         # Tavern Colors
         self.buyARoundLabel.setDefaultForeground(Colors.lighter_sepia)
@@ -1459,8 +1485,10 @@ class PlayState(GameState):
         rate = (crew + 1)
         if self.player.gold >= rate:
             increase = config.tavern['drinkMorale']
-            self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
-            self.player.moraleAdjust(increase)
+            if not self.player.moraleAdjust(increase):
+                self.cityMsgs.message("The crew couldn't be much happier. They'll gladly keep drinking, though!")
+            else:
+                self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
             self.player.gold -= rate
             self.updateCityUI()
 

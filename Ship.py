@@ -28,7 +28,8 @@ class Ship(Entity):
         attempts = 0
         while not placed:
             try:
-                super(Ship, self).__init__(map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'], True, 8, isPlayer)
+                super(Ship, self).__init__(
+                    map, self.mapX, self.mapY, self.name, self.ch, self.stats['color'], True, config.ship['minView'], isPlayer)
                 placed = True
             except:
                 dx, dy = 0, 0
@@ -102,9 +103,7 @@ class Ship(Entity):
         return True
 
     @staticmethod
-    def _getValue(stats=None):
-        if stats is None:
-            stats = shipTypes[type]
+    def _getValue(stats):
         value = stats['price']
         if stats['hullDamage'] > 0:
             value -= int(stats['hullDamage'] / 100.0 * stats['price'] * 2/3)
