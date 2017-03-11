@@ -55,7 +55,9 @@ morale = {
     'noFood': 2,
     'noRum': 3,
     'daysAtSea': 1,
-    'daysAtSeaReturn': 0.666
+    'daysAtSeaReturn': 0.5,
+    #TODO lower
+    'awolThreshold': 25
 }
 
 economy = {

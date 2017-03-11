@@ -53,6 +53,13 @@ class Captain(object):
         return "Captain {}".format(self.name)
 
     def returnToPort(self):
+
+        if self.ship and self.morale < config.morale['awolThreshold']:
+            count = randint(int(self.ship.crew * 0.75))
+            self.ship.map.trigger('crew_left', self.ship, self.ship)
+            self.ship.crew -= count
+            print "{} crew left".format(count)
+
         increase = int(self.daysAtSea * config.morale['daysAtSeaReturn'])
         print "Morale boosted by {}".format(increase)
         self.moraleAdjust(increase)
