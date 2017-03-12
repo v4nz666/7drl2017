@@ -1732,6 +1732,10 @@ class PlayState(GameState):
             self.cityMsgs.message("No room for ammo.")
             fail.play()
             return False
+        if not self.player.gold >= self.currentCity.ammoRate:
+            self.cityMsgs.message("Can't afford ammo.")
+            fail.play()
+            return False
         self.cityMsgs.message("Bought {} cannonballs for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
@@ -1747,6 +1751,10 @@ class PlayState(GameState):
         count = config.shipyard['ammoBuyCount']
         if not self.player.ship.addChainshot(count):
             self.cityMsgs.message("No room for ammo.")
+            fail.play()
+            return False
+        if not self.player.gold >= self.currentCity.ammoRate:
+            self.cityMsgs.message("Can't afford ammo.")
             fail.play()
             return False
         self.cityMsgs.message("Bought {} chainshot for ${}.".format(count, self.currentCity.ammoRate))
