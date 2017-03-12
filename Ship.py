@@ -21,6 +21,8 @@ class Ship(Entity):
         self.ch = '@'
 
         self.isPlayer = isPlayer
+        self.isPirate = False
+
         self.x = x
         self.y = y
         self.sunk = False
@@ -90,6 +92,7 @@ class Ship(Entity):
         if self.stats['sailDamage'] >= 100:
             self.stats['sailDamage'] = 100
         self.maxSails = int(config.maxSails - (self.stats['sailDamage']/100.0 * config.maxSails))
+        print "New max sails [{}]".format(self.maxSails)
 
     @staticmethod
     def getBuyPrice(stats):
@@ -199,10 +202,12 @@ class Ship(Entity):
             self.stats['sailDamage'] = 0
         return True
 
-    def canFire(self, x, y):
-        print "Checking firing status"
+    def canFire(self, x, y, captain):
         if self.reloading:
-            print "can't fire. reloading"
+            # print "reloading"
+            return False
+        maxDist = max(captain.skills['gun'], config.captains['minRange'])
+        if util.dist(self.mapX, self.mapY, x, y) > maxDist:
             return False
 
         bearing = util.bearing(self.mapX, self.mapY, x, y)
@@ -211,16 +216,15 @@ class Ship(Entity):
             bearing += 180
         elif bearing >= 180:
             bearing -= 180
-        print "after {}".format(bearing)
         if 50 <= abs(bearing) <= 130:
             print "firing from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
             return True
         else:
-            print "outside cone"
+            # print "out of cone... Bearing {} Heading {}".format(bearing, self.heading)
             return False
 
     def fire(self, targetX, targetY, _type, _range):
-        print "pulling the trigger"
+        print "pulling the trigger from {},{}".format(self.mapX, self.mapY)
         bearing = util.bearing(self.mapX, self.mapY, targetX, targetY)
         shot = Projectile(self, _type, self.mapX, self.mapY, targetX, targetY, bearing, _range, self.stats['guns'] / 2)
         self.map.addEntity(shot, shot.mapX, shot.mapY)
@@ -233,14 +237,16 @@ class Ship(Entity):
     def fireCannon(self, x, y, _range):
         print "cannonballs"
         if not self.cannonballs:
-            fail.play()
+            return False
+
         self.cannonballs -= self.stats['guns'] / 2
         return self.fire(x, y, 'cannon', _range)
 
     def fireChain(self, x, y, _range):
         print "chainshot"
         if not self.chainshot:
-            fail.play()
+            return False
+
         self.chainshot -= self.stats['guns'] / 2
         return self.fire(x, y, 'chain', _range)
 

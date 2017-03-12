@@ -177,12 +177,16 @@ class GenerateState(GameState):
             libtcod.heightmap_rain_erosion(hm, 5000, 0.3, 0.2)
             libtcod.heightmap_normalize(hm, 0.0, 1024.0)
 
+            
             thresholds = [
                 {
                     'type': 'water',
                     'range': 0.333
                 }, {
                     'type': 'grass',
+                    'range': 0.5
+                }, {
+                    'type': 'tree',
                     'range': 0.666
                 }, {
                     'type': 'mountain',

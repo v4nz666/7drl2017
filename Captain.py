@@ -9,15 +9,19 @@ from util import randint, getColor, getPirateName
 
 
 class Captain(object):
-    def __init__(self, ship=None):
-        # TODO replace with name generation
+    def __init__(self, navBase, gunBase, ship=None):
         self.name = getPirateName()
         self.morale = 50
-        self.rep = 0
+
+        self.__opinion = 100
+        self.attackingPlayer = False
+        self.isPirate = False
         self.ship = ship
+        self.rep = 0
+
         self.skills = {
-            'nav': randint(10),
-            'gun': randint(10)
+            'nav': randint(navBase),
+            'gun': randint(gunBase)
         }
 
         self.gold = 0
@@ -41,7 +45,20 @@ class Captain(object):
 
         if ship:
             self.setShip(ship)
-    
+
+    @property
+    def opinion(self):
+        return self.__opinion
+    @opinion.setter
+    def opinion(self, val):
+        print "Changing opinion to {}".format(val)
+        self.__opinion = min(max(0, val), 100)
+        if self.__opinion <= config.rep['threshold']:
+            if not self.attackingPlayer and not self.isPirate:
+                self.ship.map.trigger('repChanged', self, self)
+                self.attackingPlayer = True
+
+
     def updateViewRadius(self):
         self.ship.viewRadius = min(max(self.skills['nav'], config.ship['minView']), config.ship['maxView'])
         print "new View radius {}".format(self.ship.viewRadius)

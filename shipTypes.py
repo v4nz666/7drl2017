@@ -13,7 +13,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 20000,
-        'color': Colors.black
+        'color': Colors.darkest_grey
     },
     "Galleon": {
         'maxSpeed': 20,
@@ -35,7 +35,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 10000,
-        'color': Colors.darkest_grey
+        'color': Colors.darker_grey
     },
     "Brigantine": {
         'maxSpeed': 35,
@@ -57,7 +57,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 5000,
-        'color': Colors.darker_grey
+        'color': Colors.dark_grey
     },
     "Clipper": {
         'maxSpeed': 45,
@@ -68,7 +68,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 3000,
-        'color': Colors.darker_blue
+        'color': Colors.darker_violet
     },
     "Schooner": {
         'maxSpeed': 40,

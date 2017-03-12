@@ -6,6 +6,8 @@ maxSails = 10
 sailStep = 1.0 / maxSails
 speedAdjust = 0.075
 
+
+
 layout = {
     'uiWidth': 75,
     'uiHeight': 50
@@ -65,7 +67,6 @@ morale = {
     'noRum': 3,
     'daysAtSea': 1,
     'daysAtSeaReturn': 0.5,
-    #TODO lower
     'awolThreshold': 25
 }
 
@@ -94,7 +95,8 @@ news = {
 }
 
 captains = {
-    'genDelay': fps * 30,
+    'pirateThreshold': 0.2,
+    'genDelay': fps * 20,
     'genThreshold': 0.5,
     'maxCount': 10,
     'fovRecalcCooldown': 2,
@@ -108,8 +110,17 @@ skill = {
 }
 
 damage = {
-    'rocks': 5
+    'rocks': 5,
+    #TODO use this in damage calc
+    'gunMod': 1.5
 }
+
+rep = {
+    'attack': 10,
+    'sink': 10,
+    'threshold': 40
+}
+
 
 ship = {
     'minView': 6,

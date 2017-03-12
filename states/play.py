@@ -79,6 +79,7 @@ class PlayState(GameState):
         self.map.on('enterCity', self.enterCity)
         self.map.on('projectileHit', self.projectileHit)
         self.map.on('meetShip', self.meetShip)
+        self.map.on('repChanged', self.repChanged)
 
         self.map.on('showReload', lambda e, f: self.reloadingLabel.show())
         self.map.on('hideReload', lambda e, f: self.reloadingLabel.hide())
@@ -105,7 +106,9 @@ class PlayState(GameState):
     def projectileUpdate(self):
         self.projectilePurge = []
         for p in self.projectiles:
-            # print p
+            if not p:
+                self.projectilePurge.append(p)
+                continue
             oldX, oldY = p.mapX, p.mapY
             if self.moveEntity(p):
                 p.distanceTravelled += 1
@@ -129,12 +132,14 @@ class PlayState(GameState):
         for p in self.projectilePurge:
             if p in self.projectiles:
                 self.projectiles.remove(p)
-                self.map.removeEntity(p, p.mapX, p.mapY)
+                if isinstance(p, Entity):
+                    self.map.removeEntity(p, p.mapX, p.mapY)
 
     def projectileHit(self, p, e):
         print "P {} hit E {}".format(p, e)
         if not isinstance(e, Ship):
             return
+
         dmg = randint(p.damage)
         if not dmg:
             miss.play()
@@ -153,19 +158,31 @@ class PlayState(GameState):
 
         method = getattr(e, dmgMethod)
         method(dmg)
-        e.killCrew(crewKilled)
+        if e.crew:
+            e.killCrew(crewKilled)
+        else:
+            crewKilled = 0
 
         if e.isPlayer:
-            self.newsMsgs.message("Hit by {}. {} took {} damage. Total damage {}. {} crew killed. Crew left {}"\
-                .format(p.type, dmgDesc, dmg, e.stats['statName'], crewKilled, e.crew))
+            self.newsMsgs.message("{} attacks. {} took {} damage. Total damage {}. {} crew killed. Crew left {}"\
+                .format(p.type, dmgDesc, dmg, e.stats[statName], crewKilled, e.crew))
         else:
+            e.captain.opinion -= config.rep['attack']
+            if e.sunk:
+                sink.play()
+                if not e.isPirate:
+                    self.newsMsgs.message("You sunk {}'s ship! The other captains won't be too amused.")
+                    self.player.rep -= config.rep['sink']
+                    print "new rep {}".format(self.player.rep)
+                else:
+                    self.newsMsgs.message("You sunk the Pirate {}! Word will spread of your good deeds.")
+                    self.player.rep += config.rep['sink']
+
             self.newsMsgs.message("Hit {} with {}. {} took {} damage. Total damage {}. {} crew killed. Crew left {}"\
                 .format(e.captain.name, p.type, dmgDesc, dmg, e.stats[statName], crewKilled, e.crew))
 
-
-
-
-
+    def repChanged(self, cap, cap2):
+        self.newsMsgs.message("{} turns on you. Opinion[{}]. This could get ugly".format(cap.name, cap2.opinion))
 
     def meetShip(self, player, ship):
         self.newsMsgs.message("Met up with {} at sea".format(ship.captain.name))
@@ -175,8 +192,10 @@ class PlayState(GameState):
             newsItem = news[randint(len(news) - 1)]
             pass
         else:
-            newsItem = "Haven't seen much. Happy sailing!"
-            # self.newsPopup.message(newsItem)
+            if ship.captain.opinion < config.rep['threshold']:
+                newsItem = "Who do you think you are?"
+            else:
+                newsItem = "Haven't seen much. Happy sailing!"
         newsItem = "{} said '{}'".format(ship.captain.name, newsItem)
         print newsItem
         self.newsMsgs.message(newsItem)
@@ -214,65 +233,69 @@ class PlayState(GameState):
             self.updateCityUI()
 
     def generateCaptains(self):
-        #TODO generate a random number
-        count = 1
+        count = randint(4)
         cityFails = 0
+
         while count and len(self.captains) < config.captains['maxCount']:
             if randfloat(1) >= config.captains['genThreshold']:
-                print "skipping captain generation"
                 continue
             neighbours = []
+
+            pirate = randfloat(1.0) < config.captains['pirateThreshold']
 
             while not len(neighbours):
                 city = self.map.cities[self.map.cities.keys()[randint(len(self.map.cities) - 1)]]
                 neighbours = city.neighbours
-            print "Got city {}".format(city.name)
-            captain = Captain()
+            captain = Captain(self.player.skills['nav'], self.player.skills['gun'])
+
             shipType = getRandomType()
-            print "creating ship"
             try:
                 ship = Ship(self.map, shipType, city.portX, city.portY)
             except ShipPlacementError:
-                print 'failed to place ship, trying a new city'
                 cityFails += 1
                 if cityFails >= 10:
-                    print "Too many city fails!"
                     break
                 continue
             cityFails = 0
 
+            ship.crew = randint(ship.stats['minCrew'], ship.stats['maxCrew'])
             captain.setShip(ship)
             captain.lastCity = city
 
             destination = neighbours[randint(len(neighbours) - 1)]
-            if not captain.setDestination(destination):
-                print "failed to find a destination"
-            else:
+            if captain.setDestination(destination):
+
                 self.captains.append(captain)
 
                 cell = self.map.getCell(ship.mapX, ship.mapY)
                 if cell and not cell.entity:
                     self.map.addEntity(ship, ship.mapX, ship.mapY)
 
-                print "Added new captain [{}][{}] at {}-{},{} => {}-{},{}".format(captain.name, shipType, city.name, city.portX, city.portY, destination.name, destination.portX, destination.portY)
+                if not pirate:
+                    captain.opinion = self.player.rep
+                else:
+                    captain.ship.stats['color'] = Colors.black
+                    captain.isPirate = True
+                    self.newsMsgs.message(
+                        "The dreaded Pirate {} has been spotted somewhere in the Basin.".format(captain.name))
+                    captain.opinion = 0
+                    spawn.play()
+
             count -= 1
 
     def generateNews(self):
         cities = self.map.cities
         newsCount = randint(len(cities) / 5)
-        print "Generating up to {} news items".format(newsCount)
         while newsCount:
             if randfloat(1) < config.news['genThreshold']:
                 name = cities.keys()[randint(len(cities) - 1)]
                 cities[name].generateNews()
-                print "news at {}".format(name)
                 gossip.play()
             newsCount -= 1
 
     def daysAtSea(self):
         if not (self.player and self.player.atSea):
             return
-        print "Day at sea [-{}]".format(config.morale['daysAtSea'])
         self.player.daysAtSea += 1
         self.player.morale -= config.morale['daysAtSea']
         lowMorale.play()
@@ -357,6 +380,10 @@ class PlayState(GameState):
         if not self.player.ship:
             return
 
+        if self.player.ship.heading < 90 or self.player.ship.heading >= 270:
+            self.player.ship.ch = '%'
+        else:
+            self.player.ship.ch = '@'
         if self.player.ship.sunk or self.player.dead:
             
             self.manager.getState('highScore').player = self.player
@@ -369,6 +396,8 @@ class PlayState(GameState):
 
 
     def aiUpdate(self):
+
+
         toPurge = []
         for c in self.captains:
             if c.dead:
@@ -383,9 +412,25 @@ class PlayState(GameState):
 
             c.ship.updateCoolDown()
 
+            if c.ship.heading < 90 or c.ship.heading >= 270:
+                c.ship.ch = '%'
+            else:
+                c.ship.ch = '@'
+
+            if c.attackingPlayer:
+
+                px, py = self.player.ship.mapX, self.player.ship.mapY
+                if c.ship.canFire(px, py, c):
+
+                    if randint(1):
+                        result = c.ship.fireCannon(px, py, c.skills['gun'])
+                    else:
+                        result = c.ship.fireChain(px, py, c.skills['gun'])
+                    if result:
+                        self.projectiles.append(result)
+                    cannon.play()
 
             if not c.path:
-                print "{} has no path".format(c.name)
                 c.ship.anchored = True
             elif not util.pathSize(c.path):
                 print "Reached destination!"
@@ -394,10 +439,16 @@ class PlayState(GameState):
                 c.recalculateHeading = False
                 c.sinceRecalc = 0
                 c.ship.anchored = False
-                util.checkPath(self.map, c.ship.mapX, c.ship.mapY, c.destination.portX, c.destination.portY, c.path)
+
+                tx, ty = c.destination.portX, c.destination.portY
+                if c.attackingPlayer:
+                    dist = util.dist(c.ship.mapX, c.ship.mapY, self.player.ship.mapX, self.player.ship.mapY)
+                    if dist < c.ship.canSee:
+                        tx, ty = self.player.ship.mapX, self.player.ship.mapY
+
+                util.checkPath(self.map, c.ship.mapX, c.ship.mapY, tx, ty, c.path)
 
                 if not util.pathSize(c.path):
-                    print "couldn't repath. Killing"
                     c.dead = True
                 x1, y1 = c.ship.mapX, c.ship.mapY
                 x2, y2 = util.pathWalk(c.path)
@@ -408,15 +459,11 @@ class PlayState(GameState):
 
                 heading = int(util.bearing(x1, y1, x2, y2))
                 c.ship.heading = heading
-                # TODO full speed all the time?
                 c.ship.sails = config.maxSails
             if self.moveShip(c.ship):
                 if c.sinceRecalc >= config.captains['fovRecalcCooldown']:
                     c.recalculateHeading = True
                 c.sinceRecalc += 1
-
-
-
 
         for c in toPurge:
             print "Purging {}".format(c.name)
@@ -449,11 +496,6 @@ class PlayState(GameState):
         self.mapElement.setDirty(True)
 
         ship.calculateFovMap()
-        neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
-        for nx, ny in neighbours:
-            n = neighbours[nx, ny]
-            #TODO Ship detection here...
-            #if isinstance(n.entity, Ship):
 
         if ship.isPlayer:
             self.mapElement.center(ship.mapX, ship.mapY)
@@ -659,12 +701,14 @@ class PlayState(GameState):
         else:
             crew = 0
         totalCrew = crew + 1
-        self.brothelRateVal.setLabel(str(c.brothelRate))
         self.brothelCrewVal.setLabel(str("{}(+1)".format(crew)))
+        self.brothelRateVal.setLabel("{:>5}".format(str(c.brothelRate)))
         self.brothelCost = c.brothelRate * (totalCrew)
-        self.brothelCostVal.setLabel(str(self.brothelCost))
-        self.brothelGoldVal.setLabel(str(self.player.gold))
-        self.brothelMoraleVal.setLabel(str(self.player.morale))
+        self.brothelCostVal.setLabel("{:>5}".format(str(self.brothelCost)))
+        self.brothelGoldVal.setLabel("{:>5}".format(str(self.player.gold)))
+        self.brothelMoraleVal.setLabel("{:>5}".format(str(self.player.morale)))\
+            .setDefaultForeground(util.getColor(100 - self.player.morale))
+
 
     def updateStoreItems(self):
 
@@ -1076,16 +1120,16 @@ class PlayState(GameState):
         ### Brothel
         brothelText = "Treat the crew to a wild night. Expensive, but great for morale!"
         self.brothelText = self.brothelFrame.addElement(Elements.Text(3, 1, self.brothelFrame.width - 4, 3, brothelText))
-        self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Rate"))
-        self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 4, "20"))
-        self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Crew"))
-        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 5, "120(+1)"))
-        self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Cost"))
-        self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 6, "24000"))
-        self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Gold"))
-        self.brothelGoldVal = self.brothelFrame.addElement(Elements.Label(17, 7, "2553"))
-        self.brothelMoraleLabel = self.brothelFrame.addElement(Elements.Label(7, 8, "Morale"))
-        self.brothelMoraleVal = self.brothelFrame.addElement(Elements.Label(17, 8, "100"))
+        self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Crew"))
+        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 4, "120(+1)"))
+        self.brothelMoraleLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Morale"))
+        self.brothelMoraleVal = self.brothelFrame.addElement(Elements.Label(17, 5, "  100"))
+        self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Rate"))
+        self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 6, "   20"))
+        self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Cost"))
+        self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 7, "24000"))
+        self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 8, "Gold"))
+        self.brothelGoldVal = self.brothelFrame.addElement(Elements.Label(17, 8, " 2553"))
 
         ### Tavern
         tavernText = "You are greeted by a toothless bartender"
@@ -1236,7 +1280,7 @@ class PlayState(GameState):
                 self.player.ship.crew = 0
         # Inputs. =================================================================================
         self.pauseMenu.setKeyInputs({
-            # TODO remove
+        # TODO remove
             'quit': {
                 'key': None,
                 'ch': 'q',
@@ -1249,12 +1293,6 @@ class PlayState(GameState):
             },
         })
         self.view.setKeyInputs({
-            #TODO remove
-            'KILL': {
-                'key': None,
-                'ch': 'K',
-                'fn': lambda: killKrew(self)
-            },
             'pause': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1340,8 +1378,7 @@ class PlayState(GameState):
             'hideModal': {
                 'key': Keys.Tab,
                 'ch': None,
-                'fn': lambda:
-                self.removeView() and self.enableGameHandlers()
+                'fn': self.logHide
             },
             'hideModal2': {
                 'key': Keys.Escape,
@@ -1361,18 +1398,6 @@ class PlayState(GameState):
         })
 
         self.cityModal.setKeyInputs({
-            #TODO remove
-            'postScore': {
-                'key': None,
-                'ch': '[',
-                'fn': self.postScore
-            },
-            'getScore': {
-                'key': None,
-                'ch': ']',
-                'fn': self.getScore
-            },
-
             'pause': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1620,15 +1645,27 @@ class PlayState(GameState):
             print "offscreen"
             return
 
-        if self.player.ship.canFire(x, y):
+        if left and self.player.ship.cannonballs <= 0:
+            fail.play()
+            print "no cannonball"
+            return
+        elif self.player.ship.chainshot <= 0:
+            fail.play()
+            print "no chain"
+            return
+
+        if self.player.ship.canFire(x, y. self.player):
             self.player.shotsFired += 1
             range = max(self.player.skills['gun'], config.captains['minRange'])
             if left:
-                self.projectiles.append(self.player.ship.fireCannon(x, y, range))
+                result = self.player.ship.fireCannon(x, y, range)
             else:
-                self.projectiles.append(self.player.ship.fireChain(x, y, range))
-            cannon.play()
+                result = self.player.ship.fireChain(x, y, range)
+            if result:
+                self.projectiles.append(result)
+                cannon.play()
         else:
+            print "can't fire"
             fail.play()
 
     def gossip(self):
@@ -1699,6 +1736,10 @@ class PlayState(GameState):
             self.cityMsgs.message("No room for ammo.")
             fail.play()
             return False
+        if not self.player.gold >= self.currentCity.ammoRate:
+            self.cityMsgs.message("Can't afford ammo.")
+            fail.play()
+            return False
         self.cityMsgs.message("Bought {} cannonballs for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
@@ -1716,6 +1757,11 @@ class PlayState(GameState):
             self.cityMsgs.message("No room for ammo.")
             fail.play()
             return False
+        if not self.player.gold >= self.currentCity.ammoRate:
+            self.cityMsgs.message("Can't afford ammo.")
+            fail.play()
+            return False
+
         self.cityMsgs.message("Bought {} chainshot for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
@@ -1887,8 +1933,6 @@ class PlayState(GameState):
         else:
             shipyard.play()
 
-        #TODO SHIPYARD soudn
-
     def updateTavernUI(self):
         minCrew = "n/a"
         maxCrew = "n/a"
@@ -2017,10 +2061,16 @@ class PlayState(GameState):
         self.newsMsgs.show()
 
     def openLogModal(self):
+        self.paused = True
         self.disableHandler('shipsUpdate')
         self.addView(self.logModal)
         self.mapX, self.mapY = self.player.ship.mapX, self.player.ship.mapY
         self.logMap.center(self.mapX, self.mapY)
+
+    def logHide(self):
+        self.paused = False
+        self.removeView()
+        self.enableGameHandlers()
 
     def citySelected(self, index):
 
@@ -2044,9 +2094,9 @@ class PlayState(GameState):
         self.mapElement.center(startingCity.portX, startingCity.portY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
-        # TODO Let the player pick from a few randomly generated captains
-        self.player = Captain()
+        self.player = Captain(10, 10)
         self.player.gold = 700
+        self.player.rep = 50
         self.player.news = []
 
         self.mapElement.setPlayer(self.player)
@@ -2100,7 +2150,7 @@ class PlayState(GameState):
             else:
                 self.cityLabel = None
 
-        # TODO: Hack to deal with moving the cursor over the buggy section of the map
+        # HACK to deal with moving the cursor over the buggy section of the map
         #   (See https://github.com/v4nz666/7drl2017/issues/19)
         except AttributeError:
             print 'failed at {},{}'.format(self.mapX, self.mapY)
