@@ -1,3 +1,5 @@
+from pygame import mixer
+
 from RoguePy.libtcod import libtcod
 
 __author__ = 'jripley'
@@ -34,3 +36,6 @@ game.addState(MainMenuState('mainMenu'))
 # game.addState(LoseState('lose'))
 
 game.run('mainMenu')
+
+mixer.music.stop()
+mixer.quit()
