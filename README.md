@@ -2,6 +2,8 @@
 My entry in the 2017 Seven Day Roguelike Challenge
 
 Started Sunday, March 5, 2017 - 23:21UTC
+Completed Sunday, March 12, 2017 - 83:18UTC
+
 
 ### Requirements
 Python 2.7 32bit
