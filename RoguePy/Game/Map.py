@@ -207,24 +207,30 @@ class CellType:
         return 'Cell Type\n{}'.format(attributes)
 
 water = {
-    'passable': True,
-    'transparent': True,
-    'destructible': False,
+'passable': True,
+'transparent': True,
+'destructible': False,
 }
 grass = {
-    'passable': False,
-    'transparent': True,
-    'destructible': False,
+'passable': False,
+'transparent': True,
+'destructible': False,
+}
+tree = {
+'passable': False,
+'transparent': True,
+'destructible': False,
 }
 mountain = {
-    'passable': False,
-    'transparent': False,
-    'destructible': True,
+'passable': False,
+'transparent': False,
+'destructible': True,
 }
 
 # TODO: This is game-specific.
 CellType.All = {
-    'water': CellType('~', Colors.blue, Colors.dark_blue, water),
-    'grass': CellType(',', Colors.darkest_green, libtcod.Color(0, 96, 0), grass),
-    'mountain': CellType('^', Colors.darker_grey, libtcod.Color(0, 96, 0), mountain),
+'water': CellType('~', Colors.blue, Colors.dark_blue, water),
+'grass': CellType(',', Colors.darker_green, libtcod.Color(0, 96, 0), grass),
+'tree': CellType('&', Colors.darkest_green, libtcod.Color(0, 96, 0), tree),
+'mountain': CellType('^', Colors.darker_grey, libtcod.Color(0, 96, 0), mountain),
 }
