@@ -106,6 +106,9 @@ class PlayState(GameState):
     def projectileUpdate(self):
         self.projectilePurge = []
         for p in self.projectiles:
+            if not p:
+                self.projectilePurge.append(p)
+                continue
             oldX, oldY = p.mapX, p.mapY
             if self.moveEntity(p):
                 p.distanceTravelled += 1
@@ -129,7 +132,8 @@ class PlayState(GameState):
         for p in self.projectilePurge:
             if p in self.projectiles:
                 self.projectiles.remove(p)
-                self.map.removeEntity(p, p.mapX, p.mapY)
+                if isinstance(p, Entity):
+                    self.map.removeEntity(p, p.mapX, p.mapY)
 
     def projectileHit(self, p, e):
         print "P {} hit E {}".format(p, e)
@@ -230,67 +234,68 @@ class PlayState(GameState):
 
     def generateCaptains(self):
         #TODO generate a random number
-        count = 1
+        count = 4
         cityFails = 0
+
         while count and len(self.captains) < config.captains['maxCount']:
             if randfloat(1) >= config.captains['genThreshold']:
-                print "skipping captain generation"
                 continue
             neighbours = []
+
+            pirate = randfloat(1.0) < config.captains['pirateThreshold']
 
             while not len(neighbours):
                 city = self.map.cities[self.map.cities.keys()[randint(len(self.map.cities) - 1)]]
                 neighbours = city.neighbours
-            print "Got city {}".format(city.name)
             captain = Captain()
 
-            captain.opinion = self.player.rep
-
             shipType = getRandomType()
-            print "creating ship"
             try:
                 ship = Ship(self.map, shipType, city.portX, city.portY)
             except ShipPlacementError:
-                print 'failed to place ship, trying a new city'
                 cityFails += 1
                 if cityFails >= 10:
-                    print "Too many city fails!"
                     break
                 continue
             cityFails = 0
 
+            ship.crew = randint(ship.stats['minCrew'], ship.stats['maxCrew'])
             captain.setShip(ship)
             captain.lastCity = city
 
             destination = neighbours[randint(len(neighbours) - 1)]
-            if not captain.setDestination(destination):
-                print "failed to find a destination"
-            else:
+            if captain.setDestination(destination):
+
                 self.captains.append(captain)
 
                 cell = self.map.getCell(ship.mapX, ship.mapY)
                 if cell and not cell.entity:
                     self.map.addEntity(ship, ship.mapX, ship.mapY)
 
-                print "Added new captain [{}][{}] at {}-{},{} => {}-{},{}".format(captain.name, shipType, city.name, city.portX, city.portY, destination.name, destination.portX, destination.portY)
+                if not pirate:
+                    captain.opinion = self.player.rep
+                else:
+                    captain.ship.stats['color'] = Colors.black
+                    captain.isPirate = True
+                    self.newsMsgs.message(
+                        "The dreaded Pirate {} has been spotted somewhere in the Basin.".format(captain.name))
+                    captain.opinion = 0
+
             count -= 1
 
     def generateNews(self):
         cities = self.map.cities
         newsCount = randint(len(cities) / 5)
-        print "Generating up to {} news items".format(newsCount)
         while newsCount:
             if randfloat(1) < config.news['genThreshold']:
                 name = cities.keys()[randint(len(cities) - 1)]
                 cities[name].generateNews()
-                print "news at {}".format(name)
                 gossip.play()
             newsCount -= 1
 
     def daysAtSea(self):
         if not (self.player and self.player.atSea):
             return
-        print "Day at sea [-{}]".format(config.morale['daysAtSea'])
         self.player.daysAtSea += 1
         self.player.morale -= config.morale['daysAtSea']
         lowMorale.play()
@@ -389,6 +394,7 @@ class PlayState(GameState):
 
         toPurge = []
         for c in self.captains:
+        #TODO remove
         # for c in [self.testCaptain]:
             if c.dead:
                 print "{} DIED!".format(c.name)
@@ -404,18 +410,15 @@ class PlayState(GameState):
 
             if c.attackingPlayer:
                 px, py = self.player.ship.mapX, self.player.ship.mapY
-                if c.ship.canFire(px, py):
-                    print "Firing at player {},{}".format(self.player.ship.mapX, self.player.ship.mapY)
+                if c.ship.canFire(px, py, c):
 
                     if randint(1):
-                        print "Firing cannon"
-                        self.projectiles.append(c.ship.fireCannon(px, py, c.skills['gun']))
+                        result = c.ship.fireCannon(px, py, c.skills['gun'])
                     else:
-                        print "Firing Chain"
-                        self.projectiles.append(c.ship.fireChain(px, py, c.skills['gun']))
+                        result = c.ship.fireChain(px, py, c.skills['gun'])
+                    if result:
+                        self.projectiles.append(result)
                     cannon.play()
-                else:
-                    print "Can't fire at player"
 
             if not c.path:
                 c.ship.anchored = True
@@ -1664,7 +1667,7 @@ class PlayState(GameState):
             print "no chain"
             return
 
-        if self.player.ship.canFire(x, y):
+        if self.player.ship.canFire(x, y. self.player):
             self.player.shotsFired += 1
             range = max(self.player.skills['gun'], config.captains['minRange'])
             if left:

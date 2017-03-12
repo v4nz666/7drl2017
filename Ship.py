@@ -202,9 +202,12 @@ class Ship(Entity):
             self.stats['sailDamage'] = 0
         return True
 
-    def canFire(self, x, y):
+    def canFire(self, x, y, captain):
         if self.reloading:
             # print "reloading"
+            return False
+        maxDist = max(captain.skills['gun'], config.captains['minRange'])
+        if util.dist(self.mapX, self.mapY, x, y) > maxDist:
             return False
 
         bearing = util.bearing(self.mapX, self.mapY, x, y)

@@ -16,7 +16,7 @@ class Captain(object):
 
         self.__opinion = 100
         self.attackingPlayer = False
-
+        self.isPirate = False
         self.ship = ship
         self.rep = 0
 
@@ -55,7 +55,7 @@ class Captain(object):
         print "Changing opinion to {}".format(val)
         self.__opinion = min(max(0, val), 100)
         if self.__opinion <= config.rep['threshold']:
-            if not self.attackingPlayer:
+            if not self.attackingPlayer and not self.isPirate:
                 self.ship.map.trigger('repChanged', self, self)
                 self.attackingPlayer = True
 
