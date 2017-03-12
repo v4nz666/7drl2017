@@ -27,7 +27,7 @@ class HighScoreState(GameState):
 
 
         # add score
-        #util.addScore(self.player.name, self.player.gold)
+        util.addScore(self.player.name, self.player.gold)
         
         # display Leaderboard
         

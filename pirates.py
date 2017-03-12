@@ -28,4 +28,4 @@ game.addState(PlayState('play'))
 game.addState(HighScoreState('highScore'))
 # game.addState(LoseState('lose'))
 
-game.run('highScore')
+game.run('splash')
