@@ -569,12 +569,6 @@ class PlayState(GameState):
         mixer.music.play(-1)
         castOff.play()
 
-        ship = self.map.addEntity(Ship(self.map, 'Schooner', self.player.ship.mapX + 3, self.player.ship.mapY - 2),
-                                  self.player.ship.mapX + 3, self.player.ship.mapY
-                                  - 2)
-        captain = Captain(ship)
-        ship.anchored = True
-
     def hideShops(self):
         for shop in config.city['possibleShops']:
             elementName = "{}Frame".format(shop)
