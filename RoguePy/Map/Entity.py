@@ -8,5 +8,6 @@ class Entity(object):
 
   def setChar(self, ch):
     self.ch = ch
+
   def setColor(self, color):
     self.fg = color

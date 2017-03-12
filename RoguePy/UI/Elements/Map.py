@@ -67,7 +67,7 @@ class Map(Element):
     mapX = sx + self._offsetX - self.x
     mapY = sy + self._offsetY - self.y
 
-    if sx and sy:
+    if sx >= 0 and sy >= 0:
         return mapX, mapY
     else:
         return -1, -1

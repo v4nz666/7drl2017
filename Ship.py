@@ -2,6 +2,7 @@ import sys
 
 import config
 import util
+from Projectile import Projectile
 from RoguePy.libtcod import libtcod
 from RoguePy.Game import Entity
 from shipTypes import shipTypes
@@ -22,7 +23,9 @@ class Ship(Entity):
         self.x = x
         self.y = y
         self.sunk = False
-        
+        self.reloading = False
+        self.coolDown = 0
+
         self.maxSails = config.maxSails
         
         placed = False
@@ -190,8 +193,12 @@ class Ship(Entity):
         return True
 
     def canFire(self, x, y):
+        print "Checking firing status"
+        if self.reloading:
+            print "can't fire. reloading"
+            return False
+
         bearing = util.bearing(self.mapX, self.mapY, x, y)
-        print "Heading: {} Bearing: {} adj {}".format(self.heading, bearing, self.heading - bearing)
         bearing = self.heading - bearing
         if bearing < 0:
             bearing += 180
@@ -199,9 +206,44 @@ class Ship(Entity):
             bearing -= 180
 
         if 50 <= abs(bearing) <= 130:
-            print "firing at from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
+            print "firing from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
+            return True
         else:
-            print "{},{} -> {},{} out of cone".format(self.mapX, self.mapY, x, y)
+            print "outside cone"
+            return False
+
+    def fire(self, x, y, type):
+        print "pulling the trigger"
+        bearing = util.bearing(self.mapX, self.mapY, x, y)
+        shot = Projectile(self, type, self.mapX, self.mapY, bearing)
+        self.map.addEntity(shot, shot.mapX, shot.mapY)
+        self.reloading = True
+        self.coolDown = 0
+        self.map.trigger('showReload', self, self)
+        print shot
+        return shot
+
+    def fireCannon(self, x, y):
+        print "cannonballs"
+        if not self.cannonballs:
+            # TODO don't fire
+            pass
+        return self.fire(x, y, 'cannon')
+
+    def fireChain(self, x, y):
+        print "chainshot"
+        if not self.chainshot:
+            # TODO don't fire
+            pass
+        return self.fire(x, y, 'cannon')
+
+    def updateCoolDown(self):
+        if self.reloading:
+            if self.coolDown >= config.ship['coolDown']:
+                self.reloading = False
+                self.coolDown = 0
+                self.map.trigger('hideReload', self, self)
+            self.coolDown += 1
 
 
 class ShipPlacementError(Exception):

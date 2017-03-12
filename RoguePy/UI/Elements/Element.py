@@ -56,9 +56,13 @@ class Element(View):
   def show(self):
     self.visible = True
     self.setDirty()
+    if self.parent:
+      self.parent.setDirty(True)
     return self
   def hide(self):
     self.visible = False
+    if self.parent:
+      self.parent.setDirty(True)
     return self
 
   ###

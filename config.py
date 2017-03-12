@@ -24,6 +24,11 @@ wind = {
     'dirJitter': 5.0
 }
 
+projectile = {
+    'speed': 200.0,
+    'maxDistance': 10
+}
+
 city = {
     'possibleShops': [
         'tavern',
@@ -107,5 +112,6 @@ damage = {
 
 ship = {
     'minView': 6,
-    'maxView': 20
+    'maxView': 20,
+    'coolDown': fps * 5
 }

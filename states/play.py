@@ -34,6 +34,8 @@ class PlayState(GameState):
         self.windEffectY = 0.0
 
         self.captains = []
+        self.projectiles = []
+        self.projectilePurge = []
 
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
         self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
@@ -44,6 +46,7 @@ class PlayState(GameState):
         self.addHandler('foodUpdate', config.fps * 15, self.foodUpdate, False)
         self.addHandler('rumUpdate', config.fps * 20, self.rumUpdate, False)
 
+        self.addHandler('projectileUpdate', 1, self.projectileUpdate, False)
         self.addHandler('aiUpdate', 10, self.aiUpdate, False)
 
         self.addHandler('generateNews', config.fps * 10, self.generateNews)
@@ -54,6 +57,7 @@ class PlayState(GameState):
         self.enableHandler('generateNews')
         self.enableHandler('generateCaptains')
         self.enableHandler('aiUpdate')
+        self.enableHandler('projectileUpdate')
         self.enableHandler('daysAtSea')
         self.enableHandler('foodUpdate')
         self.enableHandler('rumUpdate')
@@ -64,11 +68,19 @@ class PlayState(GameState):
         self.disableHandler('generateNews')
         self.disableHandler('generateCaptains')
         self.disableHandler('aiUpdate')
+        self.disableHandler('projectileUpdate')
         self.disableHandler('daysAtSea')
         self.disableHandler('foodUpdate')
         self.disableHandler('rumUpdate')
         self.disableHandler('shipsUpdate')
         self.disableHandler('infoPanelUpdate')
+
+    def registerEventHandlers(self):
+        self.map.on('enterCity', self.enterCity)
+        self.map.on('projectileHit', self.projectileHit)
+
+        self.map.on('showReload', lambda e, f: self.reloadingLabel.show())
+        self.map.on('hideReload', lambda e, f: self.reloadingLabel.hide())
 
     def beforeLoad(self):
         self.manager.updateUi(self)
@@ -78,9 +90,68 @@ class PlayState(GameState):
         mixer.music.queue(os.path.join(path, 'city.wav'))
         mixer.music.play(-1)
 
-
     def beforeUnload(self):
         mixer.music.fadeout(500)
+
+    def renderProjectileOverlay(self):
+        for p in self.projectiles:
+            onscreenX, onscreenY = self.mapElement.onScreen(p.mapX, p.mapY)
+            libtcod.console_put_char(self.projectileOverlay.console, onscreenX, onscreenY, p.ch)
+        if len(self.projectiles):
+            self.mapElement.setDirty()
+
+    def projectileUpdate(self):
+        self.projectilePurge = []
+        # self.projectileOverlay.clear()
+        for p in self.projectiles:
+            # print p
+            oldX, oldY = p.mapX, p.mapY
+            if self.moveEntity(p):
+                p.distanceTravelled += 1
+                print "projectile moved to {},{}".format(p.mapX, p.mapY)
+                self.map.removeEntity(p, oldX, oldY)
+                self.map.addEntity(p, p.mapX, p.mapY)
+
+            c = self.map.getCell(p.mapX, p.mapY)
+            e = c.entity
+            if e and e is not p and e is not p.parent:
+                self.map.trigger('projectileHit', p, e)
+            if p.distanceTravelled >= config.projectile['maxDistance']:
+                self.projectilePurge.append(p)
+
+        for p in self.projectilePurge:
+            if p in self.projectiles:
+                self.projectiles.remove(p)
+                self.map.removeEntity(p, p.mapX, p.mapY)
+
+
+
+    def projectileHit(self, p, e):
+        print "P {} hit E {}".format(p, e)
+        self.map.removeEntity(p, p.mapX, p.mapY)
+        self.projectilePurge.append(p)
+
+    def moveEntity(self, entity):
+        dx = config.spf * cos(entity.heading * degToRad) * entity.speed * config.speedAdjust + self.windEffectX
+        dy = config.spf * sin(entity.heading * degToRad) * entity.speed * config.speedAdjust + self.windEffectY
+        oldX = entity.mapX
+        oldY = entity.mapY
+        entity.x += dx
+        entity.y -= dy
+
+        if entity.mapX < 0:
+            entity.x = 0
+        elif entity.mapX >= self.map.width:
+            entity.x = self.map.width - 1
+        if entity.mapY < 0:
+            entity.y = 0
+        # HACK! Keep entities off the dreaded bottom-right corner
+        elif entity.mapY >= self.map.height - 1:
+            entity.y = self.map.height - 2
+
+        if entity.mapX == oldX and entity.mapY == oldY:
+            return False
+        return True
 
     def citiesUpdate(self):
         for c in self.map.cities:
@@ -239,6 +310,8 @@ class PlayState(GameState):
             sys.exit()
 
         self.moveShip(self.player.ship)
+        self.player.ship.updateCoolDown()
+
 
 
     def aiUpdate(self):
@@ -253,6 +326,10 @@ class PlayState(GameState):
                 print "{} Sunk!".format(c.name)
                 toPurge.append(c)
                 continue
+
+            c.ship.updateCoolDown()
+
+
             if not c.path:
                 print "{} has no path".format(c.name)
                 c.ship.anchored = True
@@ -298,25 +375,11 @@ class PlayState(GameState):
     def moveShip(self, ship):
         if ship.anchored:
             return False
-        dx = config.spf * cos(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectX
-        dy = config.spf * sin(ship.heading * degToRad) * ship.speed * config.speedAdjust + self.windEffectY
+
         oldX = ship.mapX
         oldY = ship.mapY
-        ship.x += dx
-        ship.y -= dy
 
-        if ship.mapX < 0:
-            ship.x = 0
-        elif ship.mapX >= self.map.width:
-            ship.x = self.map.width - 1
-        if ship.mapY < 0:
-            ship.y = 0
-        # HACK! Keep ships off the dreaded bottom-right corner
-        elif ship.mapY >= self.map.height - 1:
-            ship.y = self.map.height - 2
-
-        if ship.mapX == oldX and ship.mapY == oldY:
-            return False
+        self.moveEntity(ship)
 
         destination = self.map.getCell(ship.mapX, ship.mapY)
         if destination and destination.type is not 'water':
@@ -441,7 +504,7 @@ class PlayState(GameState):
         ship.heading = 0.0
         self.headingDial.setVal(int(ship.heading))
         ship.sails = 0
-        self.sailSlider.val  = ship.sails
+        self.sailSlider.val = ship.sails
 
 
         x, y = self.currentCity.portX, self.currentCity.portY
@@ -665,6 +728,13 @@ class PlayState(GameState):
         self.view.addElement(self.mapElement)
         self.setFocus(self.mapElement)
 
+        self.projectileOverlay = self.mapElement.addElement(
+            Elements.Element(0, 0, self.mapElement.width, self.mapElement.height))
+        self.projectileOverlay.draw = self.renderProjectileOverlay
+
+        self.projectileOverlay.bgOpacity = 0
+        self.projectileOverlay.setDefaultForeground(Colors.black)
+
         self.logMap = self.logFrame.addElement(
             Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
         self.logMap.isStatic = True
@@ -675,8 +745,7 @@ class PlayState(GameState):
 
         self.cityLabel = None
 
-        self.map.on('enterCity', self.enterCity)
-        self.map.on('encounterShip', self.encounterShip)
+        self.registerEventHandlers()
 
     def drawOverlay(self):
         self.mapOverlay.setDirty(True)
@@ -685,6 +754,7 @@ class PlayState(GameState):
             self.mapOverlay.console, cursorX, cursorY, '+', Colors.chartreuse, Colors.white)
 
     def setupView(self):
+
         self.infoPanel = self.view.addElement(Elements.Frame(55, 0, 20, 40, "Info"))
         self.infoPanel.addElement(Elements.Label(1, 1, "Heading")).setDefaultForeground(Colors.flame)
         self.headingDial = self.infoPanel.addElement(Elements.Dial(1, 2)).setDefaultForeground(Colors.brass)
@@ -699,10 +769,11 @@ class PlayState(GameState):
                                                                   "     "))
         self.anchorLabel = self.infoPanel.addElement(Elements.Label(6, 6, "<ANCHOR>")) \
             .setDefaultBackground(Colors.darker_red)
-
-        self.infoPanel.addElement(Elements.Label(7, 8, "<SAIL>")).setDefaultForeground(Colors.brass)
-        self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 9, 12, 0, config.maxSails)). \
+        self.infoPanel.addElement(Elements.Label(7, 7, "<SAIL>")).setDefaultForeground(Colors.brass)
+        self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 8, 12, 0, config.maxSails)). \
             setDefaultForeground(Colors.brass)
+        self.reloadingLabel = self.infoPanel.addElement(Elements.Label(4, 9, "- reloading -"))\
+            .setDefaultForeground(Colors.dark_red).hide()
 
         self.infoPanel.addElement(Elements.Label(2, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
         self.captainsName = self.infoPanel.addElement(Elements.Text(1, 11, self.infoPanel.width - 2, 4, ""))
@@ -1204,8 +1275,8 @@ class PlayState(GameState):
         })
 
         self.view.setMouseInputs({
-            'lClick': self.fireCannon,
-            'rClick': self.fireChain
+            'lClick': lambda mouse: self.fire(mouse, True),
+            'rClick': lambda mouse: self.fire(mouse, False)
         })
 
         self.logModal.setKeyInputs({
@@ -1234,6 +1305,7 @@ class PlayState(GameState):
         })
 
         self.cityModal.setKeyInputs({
+            #TODO remove
             'postScore': {
                 'key': None,
                 'ch': '[',
@@ -1480,30 +1552,25 @@ class PlayState(GameState):
         })
 
     def fire(self, mouse, left=True):
+
+        print "Firing..."
         if not (self.player and self.player.ship):
+            print "not :("
             return
         charSize = libtcod.sys_get_char_size()
         x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
 
         if x == -1 or y == -1:
+            print "offscreen"
             return
 
         if self.player.ship.canFire(x, y):
             if left:
-                self.player.ship.fireCannon(x, y)
+                self.projectiles.append(self.player.ship.fireCannon(x, y))
             else:
-                self.player.ship.fireChain(x, y)
-
-        #TODO remove
-        c = self.map.getCell(x, y)
-        if c.entity:
-            print c.entity
-
-    def fireChain(self, mouse):
-        self.fire(mouse, left=False)
-
-    def fireCannon(self, mouse):
-        self.fire(mouse, left=True)
+                self.projectiles.append(self.player.ship.fireChain(x, y))
+        else:
+            print "can't fire"
 
     def gossip(self):
         if not len(self.currentCity.news):
@@ -1934,8 +2001,6 @@ class PlayState(GameState):
         mixer.quit()
         print "Quitting"
         sys.exit()
-
-
 
     def postScore(self):
         self.cityMsgs.message("POSTing score...")
