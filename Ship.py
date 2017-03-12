@@ -204,7 +204,7 @@ class Ship(Entity):
         if self.reloading:
             return False
         maxDist = max(captain.skills['gun'], config.captains['minRange'])
-        if captain.ship.isPlayer and util.dist(self.mapX, self.mapY, x, y) > maxDist:
+        if not captain.ship.isPlayer and util.dist(self.mapX, self.mapY, x, y) > maxDist:
             return False
 
         bearing = util.bearing(self.mapX, self.mapY, x, y)
