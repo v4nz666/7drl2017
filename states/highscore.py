@@ -13,7 +13,6 @@ class HighScoreState(GameState):
     def init(self):
         self.player = None
         self.setupView()
-        self.setupInputs()
         self.addHandler('draw', 1, self.drawScreen)
 
     def beforeLoad(self):
@@ -22,12 +21,10 @@ class HighScoreState(GameState):
             util.addScore(self.player.name, self.player.gold)
         self.scoresAndNames = util.getScores()
         
-        
     
     def beforeUnload(self):
         self.player = None
     def setupView(self):
-        
         
         self.frame = self.view.addElement(
             Elements.Frame(0, 0, config.layout['uiWidth'], config.layout['uiHeight'], "Leaderboard")
@@ -71,19 +68,68 @@ class HighScoreState(GameState):
         # add date column list
         self.dateList= self.frame.addElement(Elements.List(scoreListWidth + 4, 5, 10, height - 3, dates))
         
-        
-        
         self.frame.setDefaultColors(Colors.lightest_sepia, Colors.darkest_sepia,True)
         self.frame.setDefaultForeground(Colors.gold)
         headers.setDefaultForeground(Colors.lightest_sepia)
         dateHeader.setDefaultForeground(Colors.lightest_sepia)
         bar.setDefaultForeground(Colors.gold)
         
+        
+        # player score frame
+        if (self.player is not None):
+            self.drawPlayerScoreFrame()    
+        
         self.removeHandler('draw')
+        
+        if (self.player is not None):
+            self.frame.disable()
+            self.playerScoreFrame.show()
+        
+        self.setupInputs()
+        
+    def drawPlayerScoreFrame(self):
+        width = config.layout['uiWidth']
+        height = config.layout['uiHeight']
+        
+        frameWidth = 20;
+        frameHeight = 10;
+        self.playerScoreFrame = self.view.addElement(
+            Elements.Frame(width / 2 - frameWidth / 2, height / 2 - frameHeight / 2, frameWidth, frameHeight, "Your Score"))
+        
+        self.playerScoreFrame.addElement(Elements.Label(1, 4, str(500).center(frameWidth - 2)))
+        
+        self.playerScoreFrame.addElement(Elements.Label(1, 8, str("[Enter - OK]").center(frameWidth - 2)))
+        self.playerScoreFrame.addElement(Elements.Label(1, 8, str("[Enter - OK]").center(frameWidth - 2)))
 
+        self.playerScoreFrame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia,True)
+        self.setupInputs()
     def setupInputs(self):
         # Inputs. =================================================================================
         self.view.setKeyInputs({
+            
+            'scrollUp': {
+                'key': Keys.Up,
+                'ch': 'w',
+                'fn': self.scrollUp
+            },
+            'scrollDown': {
+                'key': Keys.Down,
+                'ch': 's',
+                'fn': self.scrollDown
+            },
+            'scrollUp2': {
+                'key': Keys.NumPad8,
+                'ch': 'W',
+                'fn': self.scrollUp
+            },
+            'scrollDown2': {
+                'key': Keys.NumPad2,
+                'ch': 'S',
+                'fn': self.scrollDown
+            }
+        })
+            
+        self.frame.setKeyInputs({
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -108,28 +154,27 @@ class HighScoreState(GameState):
                 'key': Keys.BackSpace,
                 'ch': None,
                 'fn': lambda: self.manager.setNextState('mainMenu')
-            },
-            'scrollUp': {
-                'key': Keys.Up,
-                'ch': 'w',
-                'fn': self.scrollUp
-            },
-            'scrollDown': {
-                'key': Keys.Down,
-                'ch': 's',
-                'fn': self.scrollDown
-            },
-            'scrollUp2': {
-                'key': Keys.NumPad8,
-                'ch': 'W',
-                'fn': self.scrollUp
-            },
-            'scrollDown2': {
-                'key': Keys.NumPad2,
-                'ch': 'S',
-                'fn': self.scrollDown
             }
         })
+           
+        if (self.player is not None):
+            self.playerScoreFrame.setKeyInputs({
+
+                'enter': {
+                    'key': Keys.Enter,
+                    'ch': None,
+                    'fn': self.closeScoreFrame
+                },
+                'enter2': {
+                    'key': Keys.NumPadEnter,
+                    'ch': None,
+                    'fn': self.closeScoreFrame
+                }
+            })
+            
+    def closeScoreFrame(self): 
+        self.playerScoreFrame.hide()
+        self.view.enable()
 
     def scrollUp(self):
         self.scoreList.scrollUp()
