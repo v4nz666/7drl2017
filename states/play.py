@@ -1,3 +1,4 @@
+from Projectile import Projectile
 import util
 from shipTypes import shipTypes, getRandomType
 from util import randfloat, degToRad, randint, getColor
@@ -134,7 +135,7 @@ class PlayState(GameState):
         for p in self.projectilePurge:
             if p in self.projectiles:
                 self.projectiles.remove(p)
-                if isinstance(p, Entity):
+                if isinstance(p, Projectile):
                     self.map.removeEntity(p, p.mapX, p.mapY)
 
     def projectileHit(self, p, e):
@@ -461,7 +462,6 @@ class PlayState(GameState):
             if not c.path:
                 c.ship.anchored = True
             elif not util.pathSize(c.path):
-                print "Reached destination!"
                 toPurge.append(c)
             elif c.recalculateHeading:
                 c.recalculateHeading = False
@@ -1676,7 +1676,7 @@ class PlayState(GameState):
             print "no chain"
             return
 
-        if self.player.ship.canFire(x, y. self.player):
+        if self.player.ship.canFire(x, y, self.player):
             self.player.shotsFired += 1
             range = max(self.player.skills['gun'], config.captains['minRange'])
             if left:

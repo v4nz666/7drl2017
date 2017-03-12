@@ -97,8 +97,8 @@ news = {
 captains = {
     'pirateThreshold': 0.2,
     'genDelay': fps * 20,
-    'genThreshold': 0.5,
-    'maxCount': 10,
+    'genThreshold': 0.8,
+    'maxCount': 20,
     'fovRecalcCooldown': 2,
     'minRange': 5
 }
