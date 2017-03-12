@@ -279,6 +279,7 @@ class PlayState(GameState):
                     self.newsMsgs.message(
                         "The dreaded Pirate {} has been spotted somewhere in the Basin.".format(captain.name))
                     captain.opinion = 0
+                    spawn.play()
 
             count -= 1
 
@@ -1275,7 +1276,7 @@ class PlayState(GameState):
                 self.player.ship.crew = 0
         # Inputs. =================================================================================
         self.pauseMenu.setKeyInputs({
-            # TODO remove
+        # TODO remove
             'quit': {
                 'key': None,
                 'ch': 'q',
