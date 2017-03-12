@@ -965,7 +965,7 @@ class PlayState(GameState):
         pauseFrame.addElement(Elements.Label(1, 2, " Q     Quit"))
 
         pauseFrame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia, True)\
-            .setDefaultForeground(Colors.darkest_sepia, False)
+            .setDefaultForeground(Colors.light_sepia, False)
 
         #### Captain's Log Modal
         modalX = halfX / 4 - 1
@@ -1273,13 +1273,8 @@ class PlayState(GameState):
         self.removeView()
 
     def setupInputs(self):
-        def killKrew(self):
-            self.player.ship.crew -= 1
-            if self.player.ship.crew < 0:
-                self.player.ship.crew = 0
         # Inputs. =================================================================================
         self.pauseMenu.setKeyInputs({
-        # TODO remove
             'quit': {
                 'key': None,
                 'ch': 'q',
