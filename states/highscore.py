@@ -76,7 +76,7 @@ class HighScoreState(GameState):
         height = config.layout['uiHeight']
 
         frameWidth = 24
-        frameHeight = 6
+        frameHeight = 7
 
         self.playerScoreFrame = self.view.addElement(
             Elements.Frame(width / 2 - frameWidth / 2, height / 2 - frameHeight / 2, frameWidth, frameHeight, "Your Score"))
