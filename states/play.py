@@ -699,12 +699,14 @@ class PlayState(GameState):
         else:
             crew = 0
         totalCrew = crew + 1
-        self.brothelRateVal.setLabel(str(c.brothelRate))
         self.brothelCrewVal.setLabel(str("{}(+1)".format(crew)))
+        self.brothelRateVal.setLabel("{:>5}".format(str(c.brothelRate)))
         self.brothelCost = c.brothelRate * (totalCrew)
-        self.brothelCostVal.setLabel(str(self.brothelCost))
-        self.brothelGoldVal.setLabel(str(self.player.gold))
-        self.brothelMoraleVal.setLabel(str(self.player.morale))
+        self.brothelCostVal.setLabel("{:>5}".format(str(self.brothelCost)))
+        self.brothelGoldVal.setLabel("{:>5}".format(str(self.player.gold)))
+        self.brothelMoraleVal.setLabel("{:>5}".format(str(self.player.morale)))\
+            .setDefaultForeground(util.getColor(100 - self.player.morale))
+
 
     def updateStoreItems(self):
 
@@ -1116,16 +1118,16 @@ class PlayState(GameState):
         ### Brothel
         brothelText = "Treat the crew to a wild night. Expensive, but great for morale!"
         self.brothelText = self.brothelFrame.addElement(Elements.Text(3, 1, self.brothelFrame.width - 4, 3, brothelText))
-        self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Rate"))
-        self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 4, "20"))
-        self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Crew"))
-        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 5, "120(+1)"))
-        self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Cost"))
-        self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 6, "24000"))
-        self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Gold"))
-        self.brothelGoldVal = self.brothelFrame.addElement(Elements.Label(17, 7, "2553"))
-        self.brothelMoraleLabel = self.brothelFrame.addElement(Elements.Label(7, 8, "Morale"))
-        self.brothelMoraleVal = self.brothelFrame.addElement(Elements.Label(17, 8, "100"))
+        self.brothelCrewLabel = self.brothelFrame.addElement(Elements.Label(7, 4, "Crew"))
+        self.brothelCrewVal = self.brothelFrame.addElement(Elements.Label(17, 4, "120(+1)"))
+        self.brothelMoraleLabel = self.brothelFrame.addElement(Elements.Label(7, 5, "Morale"))
+        self.brothelMoraleVal = self.brothelFrame.addElement(Elements.Label(17, 5, "  100"))
+        self.brothelRateLabel = self.brothelFrame.addElement(Elements.Label(7, 6, "Rate"))
+        self.brothelRateVal = self.brothelFrame.addElement(Elements.Label(17, 6, "   20"))
+        self.brothelCostLabel = self.brothelFrame.addElement(Elements.Label(7, 7, "Cost"))
+        self.brothelCostVal = self.brothelFrame.addElement(Elements.Label(17, 7, "24000"))
+        self.brothelGoldLabel = self.brothelFrame.addElement(Elements.Label(7, 8, "Gold"))
+        self.brothelGoldVal = self.brothelFrame.addElement(Elements.Label(17, 8, " 2553"))
 
         ### Tavern
         tavernText = "You are greeted by a toothless bartender"
@@ -1757,6 +1759,7 @@ class PlayState(GameState):
             self.cityMsgs.message("Can't afford ammo.")
             fail.play()
             return False
+
         self.cityMsgs.message("Bought {} chainshot for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
