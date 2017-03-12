@@ -416,6 +416,14 @@ class PlayState(GameState):
             .setDefaultColors(Colors.gold, Colors.darker_sepia)
         frame.addElement(Elements.Label(diedW - 9, 3, "{:>8}".format(self.player.gold)))\
             .setDefaultColors(Colors.gold, Colors.darker_sepia)
+        frame.setKeyInputs({
+            'ok': {
+                'key': 'any',
+                'ch': None,
+                'fn': self.doHighScore
+            }
+        })
+
         self.disableGameHandlers()
     def aiUpdate(self):
 
