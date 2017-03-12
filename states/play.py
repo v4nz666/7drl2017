@@ -2011,7 +2011,10 @@ class PlayState(GameState):
         sys.exit()
 
     def postScore(self):
-        self.cityMsgs.message("POSTing score...")
+        util.addScore(self.player.name, self.player.gold)
+        self.cityMsgs.message("added score")
 
     def getScore(self):
-        self.cityMsgs.message("GETing scores...")
+        for score in util.getScores():
+            self.cityMsgs.message(score)
+    
