@@ -118,9 +118,11 @@ class PlayState(GameState):
             _range = max(self.player.skills['gun'], config.captains['minRange'])
             _range = min(_range, p.distanceToTarget)
             if e and e is not p and e is not p.parent:
+                hit.play()
                 self.map.trigger('projectileHit', p, e)
                 self.projectilePurge.append(p)
             elif p.distanceTravelled >= _range:
+                miss.play()
                 self.projectilePurge.append(p)
 
         for p in self.projectilePurge:
@@ -220,6 +222,7 @@ class PlayState(GameState):
                 name = cities.keys()[randint(len(cities) - 1)]
                 cities[name].generateNews()
                 print "news at {}".format(name)
+                gossip.play()
             newsCount -= 1
 
     def daysAtSea(self):
@@ -228,6 +231,7 @@ class PlayState(GameState):
         print "Day at sea [-{}]".format(config.morale['daysAtSea'])
         self.player.daysAtSea += 1
         self.player.morale -= config.morale['daysAtSea']
+        lowMorale.play()
         if self.player.morale <= 0:
             self.player.morale = 0
 
@@ -498,6 +502,7 @@ class PlayState(GameState):
             return False
         if self.player.ship.crew < self.player.ship.stats['minCrew']:
             self.cityMsgs.message("Not enough crew to sail!")
+            fail.play()
             return False
 
         self.removeView()
@@ -518,6 +523,7 @@ class PlayState(GameState):
         mixer.music.stop()
         mixer.music.load(os.path.join(path, 'sailing.wav'))
         mixer.music.play(-1)
+        castOff.play()
 
     def hideShops(self):
         for shop in config.city['possibleShops']:
@@ -1574,13 +1580,16 @@ class PlayState(GameState):
                 self.projectiles.append(self.player.ship.fireCannon(x, y, range))
             else:
                 self.projectiles.append(self.player.ship.fireChain(x, y, range))
+            cannon.play()
         else:
-            print "can't fire"
+            fail.play()
 
     def gossip(self):
         if not len(self.currentCity.news):
+            noGossip.play()
             news = "Seems pretty quiet 'round here"
         else:
+            gossip.play()
             index = randint(len(self.currentCity.news) - 1)
             news = self.currentCity.news[index]
             self.currentCity.removeNews(index)
@@ -1590,8 +1599,10 @@ class PlayState(GameState):
     def hireCrew(self):
         if not self.player.ship:
             self.cityMsgs.message("Why would you need a crew? You don't even have a ship.")
+            fail.play()
             return False
         if self.player.ship.crew >= self.player.ship.stats['maxCrew']:
+            fail.play()
             self.cityMsgs.message("Crew roster is full already")
             return False
 
@@ -1601,8 +1612,10 @@ class PlayState(GameState):
             self.player.gold -= rate
             self.updateCityUI()
             self.cityMsgs.message("Hired crew member for ${}".format(rate))
+            hire.play()
             return True
         else:
+            fail.play()
             self.cityMsgs.message("Can't afford to hire crew")
             return False
 
@@ -1619,6 +1632,7 @@ class PlayState(GameState):
                 self.cityMsgs.message("The crew couldn't be much happier. They'll gladly keep drinking, though!")
             else:
                 self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
+            drink.play()
             self.player.gold -= rate
             self.updateCityUI()
 
@@ -1629,64 +1643,80 @@ class PlayState(GameState):
     def buyCannon(self):
         if not self.player.ship:
             self.cityMsgs.message("No ship to store ammo.")
+            fail.play()
             return False
 
         count = config.shipyard['ammoBuyCount']
         if not self.player.ship.addCannonballs(count):
             self.cityMsgs.message("No room for ammo.")
+            fail.play()
             return False
         self.cityMsgs.message("Bought {} cannonballs for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
+        buy.play()
+        return True
 
     def buyChain(self):
         if not self.player.ship:
             self.cityMsgs.message("No ship to store ammo.")
+            fail.play()
             return False
 
         count = config.shipyard['ammoBuyCount']
         if not self.player.ship.addChainshot(count):
             self.cityMsgs.message("No room for ammo.")
+            fail.play()
             return False
         self.cityMsgs.message("Bought {} chainshot for ${}.".format(count, self.currentCity.ammoRate))
         self.player.gold -= self.currentCity.ammoRate
         self.updateCityUI()
+        buy.play()
+        return True
 
     def repairHull(self):
         if not self.player.ship:
             self.cityMsgs.message("No ship to repair hull.")
+            fail.play()
             return False
         cost = self.currentCity.repairRate
         if self.player.gold < cost:
             self.cityMsgs.message("Not enough gold to repair hull.")
+            fail.play()
             return False
 
         if not self.player.ship.takeGoods('wood'):
             self.cityMsgs.message("Hull repair requires wood.")
+            fail.play()
             return False
 
         if self.player.ship.repairHull():
             self.cityMsgs.message("Hull repaired.")
             self.player.gold -= cost
             self.updateCityUI()
+        buy.play()
 
     def repairSails(self):
         if not self.player.ship:
             self.cityMsgs.message("No ship to repair sails.")
+            fail.play()
             return False
         cost = self.currentCity.repairRate
         if self.player.gold < cost:
             self.cityMsgs.message("Not enough gold to repair sails.")
+            fail.play()
             return False
 
         if not self.player.ship.takeGoods('cloth'):
             self.cityMsgs.message("Sail repair requires cloth.")
+            fail.play()
             return False
 
         if self.player.ship.repairSails():
             self.cityMsgs.message("Sails repaired.")
             self.player.gold -= cost
             self.updateCityUI()
+        buy.play()
 
     def updateShipStats(self):
         if not len(self.currentCity.availableShips):
@@ -1709,6 +1739,7 @@ class PlayState(GameState):
         shipType, stats = self.currentCity.getAvailableShip(self.shipyardMenu.selected)
         result = self.player.buyShip(shipType, stats)
         if result is not False:
+            castOff.play()
             salePrice, goodsPrice = result[0], result[1]
             print "sale, goods: {},{}".format(salePrice, goodsPrice)
             self.cityMsgs.message("Bought a new {}!".format(shipType))
@@ -1721,6 +1752,7 @@ class PlayState(GameState):
             self.shipyardMenu.selected = 0
             self.updateCityUI()
         else:
+            fail.play()
             self.cityMsgs.message("Can't afford to buy {}".format(shipType))
 
     def brothel(self):
@@ -1735,12 +1767,15 @@ class PlayState(GameState):
             self.player.moraleAdjust(self.currentCity.brothelReturn)
             self.player.gold -= cost
             self.updateCityUI()
+            brothel.play()
         else:
+            fail.play()
             self.cityMsgs.message("You can't afford a trip to the brothel.")
 
     def buyGoods(self, index):
         if not self.player.ship:
             self.cityMsgs.message("You don't have a ship to store any goods in.")
+            fail.play()
             return
 
         itemName = self.getItemByIndex(index)
@@ -1748,40 +1783,45 @@ class PlayState(GameState):
 
         if self.player.gold < price:
             self.cityMsgs.message("Not enough gold for {}.".format(itemName))
+            fail.play()
             return
         if self.currentCity.goods[itemName] < 1:
             self.cityMsgs.message("{} is out of stock.".format(itemName))
+            fail.play()
             return
         if not self.player.ship.addGoods(itemName):
             self.cityMsgs.message("{} won't fit on ship!".format(itemName))
+            fail.play()
             return
 
         self.currentCity.goods[itemName] -= 1
         self.currentCity.gold += price
         self.player.gold -= price
 
-
         self.cityMsgs.message("Bought {} for ${}".format(itemName, price))
         self.updateCityUI()
+        buy.play()
 
     def sellStuff(self, index):
         if not self.player.ship:
             self.cityMsgs.message("You don't have anything to sell")
             return
-
         itemName = self.getItemByIndex(index)
         price = self.currentCity.getSellPrice(itemName)
 
         if self.currentCity.gold < price:
             self.cityMsgs.message("City doesn't have enough gold")
+            fail.play()
             return
         if not self.player.ship.takeGoods(itemName):
             self.cityMsgs.message("What kinda scam are you trying to pull?")
+            fail.play()
             return
         self.currentCity.goods[itemName] += 1
         self.player.gold += price
         self.currentCity.gold -= price
         self.updateCityUI()
+        #TODO Sell sound
 
     @staticmethod
     def getItemByIndex(index):
@@ -1792,6 +1832,13 @@ class PlayState(GameState):
         if element.visible:
             self.disableShops()
             element.enable()
+        if name == "tavern":
+            tavern.play()
+        elif name == "generalstore":
+            store.play()
+        else:
+            pass
+        #TODO SHIPYARD soudn
 
     def updateTavernUI(self):
         minCrew = "n/a"
@@ -1821,6 +1868,7 @@ class PlayState(GameState):
 
 
     def toggleAnchor(self):
+        anchor.play()
         ship = self.player.ship
         ship.toggleAnchor()
         self.updateAnchorUI()

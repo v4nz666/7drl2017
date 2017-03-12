@@ -1,3 +1,5 @@
+from RoguePy.libtcod import libtcod
+
 __author__ = 'jripley'
 from states import *
 import config
@@ -7,7 +9,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Pirates of Rogue Basin')
 parser.add_argument('--full', dest='fullScreen', action='store_true', help='run the game in fullscreen mode')
-
+libtcod.mouse_show_cursor(True)
 args = parser.parse_args()
 print args
 fullscreen = args.fullScreen

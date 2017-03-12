@@ -212,10 +212,10 @@ class Ship(Entity):
             print "outside cone"
             return False
 
-    def fire(self, targetX, targetY, type, range):
+    def fire(self, targetX, targetY, _type, _range):
         print "pulling the trigger"
         bearing = util.bearing(self.mapX, self.mapY, targetX, targetY)
-        shot = Projectile(self, type, self.mapX, self.mapY, targetX, targetY, bearing, range)
+        shot = Projectile(self, _type, self.mapX, self.mapY, targetX, targetY, bearing, _range)
         self.map.addEntity(shot, shot.mapX, shot.mapY)
         self.reloading = True
         self.coolDown = 0
@@ -223,12 +223,12 @@ class Ship(Entity):
         print shot
         return shot
 
-    def fireCannon(self, x, y, range):
+    def fireCannon(self, x, y, _range):
         print "cannonballs"
         if not self.cannonballs:
             # TODO don't fire
             pass
-        return self.fire(x, y, 'cannon', range)
+        return self.fire(x, y, 'cannon', _range)
 
     def fireChain(self, x, y, range):
         print "chainshot"
