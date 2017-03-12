@@ -97,13 +97,14 @@ captains = {
     'genDelay': fps * 30,
     'genThreshold': 0.5,
     'maxCount': 10,
-    'fovRecalcCooldown': 2
+    'fovRecalcCooldown': 2,
+    'minRange': 5
 }
 
 skill = {
     'max': 20,
     'navDays': 5,
-    'gunWins': 5
+    'gunShots': 50
 }
 
 damage = {

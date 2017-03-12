@@ -28,7 +28,9 @@ class Captain(object):
         self.daysAtSeaTotal = 0
         self.__daysAtSea = 0
         self.daysAtSea = 0
-
+        
+        self.__shotsFired = 0
+        
         self.recalculateHeading = True
         self.sinceRecalc = 0
 
@@ -36,11 +38,22 @@ class Captain(object):
         self.path = None
 
         self.dead = False
-
+    
     def updateViewRadius(self):
         self.ship.viewRadius = min(max(self.skills['nav'], config.ship['minView']), config.ship['maxView'])
         print "new View radius {}".format(self.ship.viewRadius)
         self.ship.calculateFovMap()
+    
+    @property
+    def shotsFired(self):
+        return self.__shotsFired
+    @shotsFired.setter
+    def shotsFired(self, val):
+        self.__shotsFired = val
+        if not self.shotsFired % config.skill['gunShots']:
+            if self.skills['gun'] < config.skill['max']:
+                print "Gun Skill increased!"
+                self.skills['gun'] += 1
 
     @property
     def daysAtSea(self):
@@ -49,10 +62,7 @@ class Captain(object):
     def daysAtSea(self, val):
         if not self.atSea:
             return
-        if self.ship.isPlayer:
-
-            print "setting days at sea to {}".format(val)
-
+        
         diff = val - self.__daysAtSea
         self.__daysAtSea = val
         self.daysAtSeaTotal += diff

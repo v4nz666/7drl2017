@@ -96,13 +96,13 @@ class PlayState(GameState):
     def renderProjectileOverlay(self):
         for p in self.projectiles:
             onscreenX, onscreenY = self.mapElement.onScreen(p.mapX, p.mapY)
-            libtcod.console_put_char(self.projectileOverlay.console, onscreenX, onscreenY, p.ch)
+
+            libtcod.console_put_char_ex(self.projectileOverlay.console, onscreenX, onscreenY, p.ch, p.color, Colors.black)
         if len(self.projectiles):
             self.mapElement.setDirty()
 
     def projectileUpdate(self):
         self.projectilePurge = []
-        # self.projectileOverlay.clear()
         for p in self.projectiles:
             # print p
             oldX, oldY = p.mapX, p.mapY
@@ -114,9 +114,13 @@ class PlayState(GameState):
 
             c = self.map.getCell(p.mapX, p.mapY)
             e = c.entity
+            
+            _range = max(self.player.skills['gun'], config.captains['minRange'])
+            _range = min(_range, p.distanceToTarget)
             if e and e is not p and e is not p.parent:
                 self.map.trigger('projectileHit', p, e)
-            if p.distanceTravelled >= config.projectile['maxDistance']:
+                self.projectilePurge.append(p)
+            elif p.distanceTravelled >= _range:
                 self.projectilePurge.append(p)
 
         for p in self.projectilePurge:
@@ -489,9 +493,6 @@ class PlayState(GameState):
         self.updateCityUI()
 
     def castOff(self, ship):
-        mixer.music.stop()
-        mixer.music.load(os.path.join(path, 'sailing.wav'))
-        mixer.music.play(-1)
 
         if not self.player.ship:
             return False
@@ -506,7 +507,6 @@ class PlayState(GameState):
         ship.sails = 0
         self.sailSlider.val = ship.sails
 
-
         x, y = self.currentCity.portX, self.currentCity.portY
         ship.x = x
         ship.y = y
@@ -515,6 +515,9 @@ class PlayState(GameState):
         self.currentCity = None
         self.player.atSea = True
         self.enableGameHandlers()
+        mixer.music.stop()
+        mixer.music.load(os.path.join(path, 'sailing.wav'))
+        mixer.music.play(-1)
 
     def hideShops(self):
         for shop in config.city['possibleShops']:
@@ -1565,10 +1568,12 @@ class PlayState(GameState):
             return
 
         if self.player.ship.canFire(x, y):
+            self.player.shotsFired += 1
+            range = max(self.player.skills['gun'], config.captains['minRange'])
             if left:
-                self.projectiles.append(self.player.ship.fireCannon(x, y))
+                self.projectiles.append(self.player.ship.fireCannon(x, y, range))
             else:
-                self.projectiles.append(self.player.ship.fireChain(x, y))
+                self.projectiles.append(self.player.ship.fireChain(x, y, range))
         else:
             print "can't fire"
 
@@ -1923,6 +1928,10 @@ class PlayState(GameState):
 
         startingCity = cities[index]
 
+        for n in startingCity.neighbours:
+            print "Seeing {}".format(n.name)
+            self.map.getCell(n.x, n.y).seen = True
+
         types = ['Caravel', 'Sloop']
         for i in range(randint(3, 1)):
             shipType = types[randint(1)]
@@ -1933,7 +1942,6 @@ class PlayState(GameState):
         self.removeView()
 
         self.mapElement.center(startingCity.portX, startingCity.portY)
-
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
         # TODO Let the player pick from a few randomly generated captains

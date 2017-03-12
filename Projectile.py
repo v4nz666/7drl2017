@@ -1,16 +1,26 @@
+import util
+from RoguePy.UI import Colors
 from RoguePy.libtcod import libtcod
 from RoguePy.Map import Entity
 import config
 
 class Projectile(Entity):
-    def __init__(self, parent, type, x, y, heading):
+    def __init__(self, parent, type, x, y, tx, ty, heading, range):
         super(Projectile, self).__init__('projectile')
         self.ch = '.'
         self.heading = heading
         self.speed = config.projectile['speed']
 
-        self.type = type
+
+        if type == "cannon":
+            clr = Colors.black
+        else:
+            clr = Colors.silver
+        self.color = clr
+        self.range = range
+
         self.distanceTravelled = 0
+        self.distanceToTarget = int(util.dist(x, y, tx, ty))
         self.canSee = False
 
         self.parent = parent

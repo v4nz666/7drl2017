@@ -1,3 +1,5 @@
+import math
+
 import config
 from RoguePy.UI import Colors
 from RoguePy.libtcod import libtcod
@@ -16,8 +18,13 @@ radToDeg = 180 / pi
 halfPi = pi / 2
 twoPi = pi * 2
 
+def dist(x1, y1, x2, y2):
+    dist = math.sqrt((1.0*x2 - x1)**2 + (y2 - y1)**2)
+    return dist
+
+
 def bearing(ax, ay, bx, by):
-    theta = -1*(atan2(bx - ax, ay - by) - halfPi)
+    theta = -1 * (atan2(bx - ax, ay - by) - halfPi)
     if theta < 0.0:
         theta += twoPi
     return radToDeg * theta

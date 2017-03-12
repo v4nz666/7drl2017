@@ -202,9 +202,9 @@ class Ship(Entity):
         bearing = self.heading - bearing
         if bearing < 0:
             bearing += 180
-        elif bearing >= 360:
+        elif bearing >= 180:
             bearing -= 180
-
+        print "after {}".format(bearing)
         if 50 <= abs(bearing) <= 130:
             print "firing from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
             return True
@@ -212,10 +212,10 @@ class Ship(Entity):
             print "outside cone"
             return False
 
-    def fire(self, x, y, type):
+    def fire(self, targetX, targetY, type, range):
         print "pulling the trigger"
-        bearing = util.bearing(self.mapX, self.mapY, x, y)
-        shot = Projectile(self, type, self.mapX, self.mapY, bearing)
+        bearing = util.bearing(self.mapX, self.mapY, targetX, targetY)
+        shot = Projectile(self, type, self.mapX, self.mapY, targetX, targetY, bearing, range)
         self.map.addEntity(shot, shot.mapX, shot.mapY)
         self.reloading = True
         self.coolDown = 0
@@ -223,19 +223,19 @@ class Ship(Entity):
         print shot
         return shot
 
-    def fireCannon(self, x, y):
+    def fireCannon(self, x, y, range):
         print "cannonballs"
         if not self.cannonballs:
             # TODO don't fire
             pass
-        return self.fire(x, y, 'cannon')
+        return self.fire(x, y, 'cannon', range)
 
-    def fireChain(self, x, y):
+    def fireChain(self, x, y, range):
         print "chainshot"
         if not self.chainshot:
             # TODO don't fire
             pass
-        return self.fire(x, y, 'cannon')
+        return self.fire(x, y, 'chain', range)
 
     def updateCoolDown(self):
         if self.reloading:
