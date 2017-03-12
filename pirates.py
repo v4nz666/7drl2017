@@ -27,7 +27,7 @@ game = Game("Pirates of Rogue Basin", config.layout['uiWidth'], config.layout['u
 game.addState(SplashState('splash'))
 game.addState(GenerateState('generate'))
 game.addState(PlayState('play'))
-# game.addState(WinState('win'))
+game.addState(HighScoreState('highScore'))
 # game.addState(LoseState('lose'))
 
 game.run('splash')
