@@ -3,6 +3,20 @@ My entry in the 2017 Seven Day Roguelike Challenge
 
 Started Sunday, March 5, 2017 - 23:21UTC
 
+### Requirements
+Python 2.7 32bit
+
+Packages:
+- pygame
+- requests
+
+If you've got python 2.7 32bit installed, installing the packages can be done with:
+
+``` 
+pip install pygame
+pip install requests
+```
+
 ### Features
 
 The game plays in real-time, with you controlling the heading and sail adjustment of your ship. Wind blows in roughly from the East, and jitters around, both in strength and direction as time passes, adjust your heading to compensate.
