@@ -254,7 +254,7 @@ class PlayState(GameState):
             if self.player.morale < 0:
                 self.player.morale = 0
         else:
-            print "Ate food"
+            eat.play()
             self.player.ship.takeGoods('food')
 
     def rumUpdate(self):
@@ -267,7 +267,7 @@ class PlayState(GameState):
             if self.player.morale < 0:
                 self.player.morale = 0
         else:
-            print "Drank rum"
+            drink.play()
             self.player.ship.takeGoods('rum')
 
     def infoPanelUpdate(self):
@@ -1632,7 +1632,7 @@ class PlayState(GameState):
                 self.cityMsgs.message("The crew couldn't be much happier. They'll gladly keep drinking, though!")
             else:
                 self.cityMsgs.message("Bought a round for ${}, the men seem more happy, now.".format(rate, increase))
-            drink.play()
+            buyRound.play()
             self.player.gold -= rate
             self.updateCityUI()
 

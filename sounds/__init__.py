@@ -5,7 +5,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 mixer.pre_init(44100, -16, 2, 4096) #frequency, size, channels, buffersize
 mixer.init()
-mixer.music.set_volume(0.5)
+mixer.music.set_volume(0.1)
 
 # combatHitSound = mixer.Sound(os.path.join(path, 'combatHit.wav'))
 # combatMissSound = mixer.Sound(os.path.join(path, 'combatMiss.wav'))
@@ -25,7 +25,9 @@ cannon = mixer.Sound(os.path.join(path, 'cannon.wav'))
 miss = mixer.Sound(os.path.join(path, 'miss.wav'))
 hit = mixer.Sound(os.path.join(path, 'hit.wav')) 
 sink = mixer.Sound(os.path.join(path, 'sink.wav'))
+eat = mixer.Sound(os.path.join(path, 'eat.wav')) 
 drink = mixer.Sound(os.path.join(path, 'drink.wav')) 
+buyRound = mixer.Sound(os.path.join(path, 'buyRound.wav')) 
 repairHull = mixer.Sound(os.path.join(path, 'repairHull`.wav'))
 repairSail = mixer.Sound(os.path.join(path, 'repairSail.wav'))
 tavern = mixer.Sound(os.path.join(path, 'tavern.wav'))
@@ -37,37 +39,7 @@ gossip = mixer.Sound(os.path.join(path, 'gossip.wav'))
 brothel = mixer.Sound(os.path.join(path, 'brothel.wav'))
 lowMorale = mixer.Sound(os.path.join(path, 'lowMorale.wav'))
 
-gossip.set_volume(0.2)
-
-sounds = [
-    hire,
-    buy,
-    fail,
-    anchor,
-    cannon,
-    miss,
-    hit,
-    sink,
-    drink,
-    repairHull,
-    repairSail,
-    tavern,
-    store,
-    castOff,
-    skillUp,
-    noGossip,
-    gossip,
-    brothel,
-    lowMorale
-]
-
-def setSoundVolume(val):
-    global sounds
-    for s in sounds:
-        s.set_volume(val)
-def getSoundVolume():
-    global sounds
-    return sounds[0].get_volume()
+gossip.set_volume(0.1)
 
 def setMusicVolume(val):
     mixer.music.set_volume(val)
