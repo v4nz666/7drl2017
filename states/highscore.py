@@ -67,24 +67,30 @@ class HighScoreState(GameState):
 
         self.scoreList.setItems(scores)
         self.dateList.setItems(dates)
-        self.drawPlayerScoreFrame()
+        if self.player:
+            self.drawPlayerScoreFrame()
         self.removeHandler('drawScores')
 
     def drawPlayerScoreFrame(self):
         width = config.layout['uiWidth']
         height = config.layout['uiHeight']
 
-        frameWidth = 20;
-        frameHeight = 10;
+        frameWidth = 24
+        frameHeight = 6
 
         self.playerScoreFrame = self.view.addElement(
             Elements.Frame(width / 2 - frameWidth / 2, height / 2 - frameHeight / 2, frameWidth, frameHeight, "Your Score"))
 
-        self.playerScoreFrame.addElement(Elements.Label(1, 4, str(self.player.gold).center(frameWidth - 2)))\
-            .setDefaultForeground(Colors.gold)
-        self.playerScoreFrame.addElement(Elements.Label(1, 8, str("[Enter - OK]").center(frameWidth - 2)))
+        self.playerScoreFrame.addElement(Elements.Label(1, 5, str("[Enter - OK]").center(frameWidth - 2)))
 
+        self.playerScoreFrame.addElement(
+            Elements.Text(1, 1, frameWidth - 2, 2, str(self.player.name).center(frameWidth - 2))) \
+                .setDefaultForeground(Colors.sepia)
         self.playerScoreFrame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia, True)
+
+        self.playerScoreFrame.addElement(Elements.Label(1, 3, str(self.player.gold).center(frameWidth - 2))) \
+            .setDefaultColors(Colors.gold, Colors.darker_sepia)
+
         self.setupInputs()
 
     def setupInputs(self):
