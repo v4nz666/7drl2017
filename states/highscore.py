@@ -81,7 +81,7 @@ class HighScoreState(GameState):
         self.playerScoreFrame = self.view.addElement(
             Elements.Frame(width / 2 - frameWidth / 2, height / 2 - frameHeight / 2, frameWidth, frameHeight, "Your Score"))
 
-        self.playerScoreFrame.addElement(Elements.Label(1, 5, str("[Enter - OK]").center(frameWidth - 2)))
+        self.playerScoreFrame.addElement(Elements.Label(1, 5, str(" Enter - OK ").center(frameWidth - 2)))
 
         self.playerScoreFrame.addElement(
             Elements.Text(1, 1, frameWidth - 2, 2, str(self.player.name).center(frameWidth - 2))) \

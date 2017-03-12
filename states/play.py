@@ -805,6 +805,7 @@ class PlayState(GameState):
         modal = self.introModal
         menuHeight = min(len(majorCities), 5)
         self.introMenu = modal.addElement(Elements.Menu(1, modal.height - menuHeight - 1, modal.width - 2, menuHeight, menuItems))
+        self.introMenu.setDefaultColors(Colors.light_sepia, Colors.darkest_sepia)
 
         self.introModal.setKeyInputs({
             'pause': {
@@ -1272,7 +1273,7 @@ class PlayState(GameState):
         modalH = halfY
 
         self.introModal = View(modalW, modalH, modalX, modalY)
-        self.introModal.addElement(Elements.Frame(0, 0, modalW, modalH, "Welcome!"))
+        self.introFrame = self.introModal.addElement(Elements.Frame(0, 0, modalW, modalH, "Welcome!"))
         introText = \
             "  Welcome to Rogue Basin. Home of great opportunity for a young captain like yourself. " + \
             "There has been a drastic increase in Pirate activity of late, and as such, the King " + \
@@ -1280,15 +1281,14 @@ class PlayState(GameState):
             "the seas of the Pirate threat.\n\n" + \
             "  Never one to miss out on a chance for new adventures, you snatch up the chance, gather " + \
             "your life savings and head to the big city to find a ship."
-        self.introModal.addElement(Elements.Text(1, 2, modalW - 2, 15, introText)). \
-            setDefaultForeground(Colors.dark_green)
+        self.introFrame.addElement(Elements.Text(1, 2, modalW - 2, 15, introText))
 
         pickACity = \
             "Please choose your starting Port"
 
-        self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
-            setDefaultForeground(Colors.dark_red)
-
+        introText = self.introFrame.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity))
+        self.introFrame.setDefaultColors(Colors.lighter_sepia, Colors.darkest_sepia, True)
+        introText.setDefaultForeground(Colors.lightest_sepia)
 
     def showPause(self):
         mixer.music.pause()

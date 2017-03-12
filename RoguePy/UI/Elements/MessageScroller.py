@@ -28,6 +28,7 @@ class MessageScroller(Element):
         break
     self.messages = self.messages[-n:]
     self.setDirty(True)
+    return True
 
   def _addOrStack(self, text):
     # Handle message stacking.
