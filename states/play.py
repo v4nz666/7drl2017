@@ -481,7 +481,6 @@ class PlayState(GameState):
                 x1, y1 = c.ship.mapX, c.ship.mapY
                 x2, y2 = util.pathWalk(c.path)
                 if x2 is None:
-                    # TODO a little harsh, perhaps
                     c.dead = True
                     continue
 
@@ -494,7 +493,6 @@ class PlayState(GameState):
                 c.sinceRecalc += 1
 
         for c in toPurge:
-            print "Purging {}".format(c.name)
             self.captains.remove(c)
             util.deletePath(c.path)
             self.map.removeEntity(c.ship, c.ship.mapX, c.ship.mapY)
@@ -1937,7 +1935,7 @@ class PlayState(GameState):
         self.player.gold += price
         self.currentCity.gold -= price
         self.updateCityUI()
-        #TODO Sell sound
+        buy.play()
 
     @staticmethod
     def getItemByIndex(index):

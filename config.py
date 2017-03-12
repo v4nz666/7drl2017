@@ -1,4 +1,3 @@
-#TODO set this to a reasonable value
 fps = 90
 spf = 1.0/fps
 
@@ -110,9 +109,7 @@ skill = {
 }
 
 damage = {
-    'rocks': 5,
-    #TODO use this in damage calc
-    'gunMod': 1.5
+    'rocks': 5
 }
 
 rep = {
