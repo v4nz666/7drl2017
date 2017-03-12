@@ -387,9 +387,7 @@ class PlayState(GameState):
         else:
             self.player.ship.ch = '@'
         if self.player.ship.sunk or self.player.dead:
-            
-            self.manager.getState('highScore').player = self.player
-            self.manager.setNextState('highScore')
+            self.doHighScore()
 
 
         self.moveShip(self.player.ship)
@@ -1286,7 +1284,7 @@ class PlayState(GameState):
             'quit': {
                 'key': None,
                 'ch': 'q',
-                'fn': self.quit
+                'fn': self.doHighScore
             },
             'back': {
                 'key': Keys.Escape,
@@ -2157,13 +2155,6 @@ class PlayState(GameState):
         except AttributeError:
             print 'failed at {},{}'.format(self.mapX, self.mapY)
 
-    @staticmethod
-    def quit():
-        mixer.music.stop()
-        mixer.quit()
-        print "Quitting"
-        sys.exit()
-
     def postScore(self):
         util.addScore(self.player.name, self.player.gold)
         self.cityMsgs.message("added score")
@@ -2171,4 +2162,9 @@ class PlayState(GameState):
     def getScore(self):
         for score in util.getScores():
             self.cityMsgs.message(score)
-    
+
+    def doHighScore(self):
+        mixer.music.stop()
+        mixer.quit()
+        self.manager.getState('highScore').player = self.player
+        self.manager.setNextState('highScore')
