@@ -16,6 +16,7 @@ class MainMenuState(GameState):
         self.setupInputs()
 
     def beforeLoad(self):
+        mixer.music.stop()
         mixer.music.load(os.path.join(path, 'intro.wav'))
         mixer.music.play(-1)
 
@@ -31,7 +32,8 @@ class MainMenuState(GameState):
         xOffset = width / 2 - 3
         yOffset = height / 2 - 2
 
-        title = self.frame.addElement(Elements.Label(2, 2 * height / 5, "------ Pirates of Rogue Basin ------".center(width)))
+        title = self.frame.addElement(Elements.Label(2, 2 * height / 5, "Pirates of Rogue Basin".center(width)))
+        titleBars = self.frame.addElement(Elements.Label(2, 2 * height / 5, "------                        ------".center(width)))
         subtitle = self.frame.addElement(Elements.Label(2, 2 * height / 5 + 3, "Jeff Ripley - 7DRL 2017".center(width)))
 
         self.menu = self.frame.addElement(Elements.Menu(xOffset, 3 * height / 5, 11, 4))
@@ -45,8 +47,10 @@ class MainMenuState(GameState):
         
         self.frame.setDefaultColors(Colors.lighter_sepia, Colors.darkest_sepia, True)
         self.frame.setDefaultForeground(Colors.gold)
-        title.setDefaultForeground(Colors.gold)
-        subtitle.setDefaultForeground(Colors.gold)
+        title.setDefaultForeground(Colors.lightest_sepia)
+
+        titleBars.setDefaultForeground(Colors.gold).bgOpacity = 0.0
+        subtitle.setDefaultForeground(Colors.darker_red)
         
 
 
@@ -85,11 +89,6 @@ class MainMenuState(GameState):
             }
         })
 
-    @staticmethod
-    def quit():
-        print "Quitting"
-        sys.exit()
-        
     # Fill a string of length 1 with str1, and st2, filling the space between with fillChar
     @staticmethod
     def fillSpace(width, str1, str2, fillChar):

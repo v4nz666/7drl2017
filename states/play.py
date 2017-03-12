@@ -64,7 +64,7 @@ class PlayState(GameState):
 
     def beforeUnload(self):
         self.disableGameHandlers()
-        mixer.music.fadeout(500)
+
 
     def enableGameHandlers(self):
         self.enableHandler('generateNews')
@@ -960,13 +960,12 @@ class PlayState(GameState):
         pauseH = 4
 
         self.pauseMenu = View(pauseW, pauseH, pauseX, pauseY)
-        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused")) \
-            .setDefaultForeground(Colors.darker_azure)
-        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back")) \
-            .setDefaultForeground(Colors.azure)
-        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit")) \
-            .setDefaultForeground(Colors.azure)
+        pauseFrame = self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused"))
+        pauseFrame.addElement(Elements.Label(1, 1, "Esc    Back"))
+        pauseFrame.addElement(Elements.Label(1, 2, " Q     Quit"))
 
+        pauseFrame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia, True)\
+            .setDefaultForeground(Colors.darkest_sepia, False)
 
         #### Captain's Log Modal
         modalX = halfX / 4 - 1
@@ -2164,7 +2163,6 @@ class PlayState(GameState):
             self.cityMsgs.message(score)
 
     def doHighScore(self):
-        mixer.music.stop()
-        mixer.quit()
+        mixer.music.fadeout(500)
         self.manager.getState('highScore').player = self.player
         self.manager.setNextState('highScore')
