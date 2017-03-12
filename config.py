@@ -108,8 +108,17 @@ skill = {
 }
 
 damage = {
-    'rocks': 5
+    'rocks': 5,
+    #TODO use this in damage calc
+    'gunMod': 1.5
 }
+
+rep = {
+    'attack': 10,
+    'sink': 10,
+    'threshold': 40
+}
+
 
 ship = {
     'minView': 6,
