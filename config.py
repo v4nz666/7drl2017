@@ -114,5 +114,5 @@ damage = {
 ship = {
     'minView': 6,
     'maxView': 20,
-    'coolDown': fps * 5
+    'coolDown': fps# * 5
 }

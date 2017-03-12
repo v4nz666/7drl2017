@@ -4,6 +4,7 @@ from RoguePy.libtcod import libtcod
 from RoguePy.Map import Entity
 import config
 
+
 class Projectile(Entity):
     def __init__(self, parent, type, x, y, tx, ty, heading, range, dmg):
         super(Projectile, self).__init__('projectile')
@@ -11,6 +12,8 @@ class Projectile(Entity):
         self.heading = heading
         self.speed = config.projectile['speed']
         self.damage = dmg
+
+        self.type = type
 
         if type == "cannon":
             clr = Colors.black

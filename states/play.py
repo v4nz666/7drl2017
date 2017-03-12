@@ -131,6 +131,42 @@ class PlayState(GameState):
                 self.projectiles.remove(p)
                 self.map.removeEntity(p, p.mapX, p.mapY)
 
+    def projectileHit(self, p, e):
+        print "P {} hit E {}".format(p, e)
+        if not isinstance(e, Ship):
+            return
+        dmg = randint(p.damage)
+        if not dmg:
+            miss.play()
+            return
+        if p.type == "cannon":
+            dmgMethod = 'damageHull'
+            statName = 'hullDamage'
+            dmgDesc = "Hull"
+            crewKilled = randint(dmg)
+
+        else:
+            dmgMethod = 'damageSails'
+            statName = 'sailDamage'
+            dmgDesc = "Sails"
+            crewKilled = randint(p.damage)
+
+        method = getattr(e, dmgMethod)
+        method(dmg)
+        e.killCrew(crewKilled)
+
+        if e.isPlayer:
+            self.newsMsgs.message("Hit by {}. {} took {} damage. Total damage {}. {} crew killed. Crew left {}"\
+                .format(p.type, dmgDesc, dmg, e.stats['statName'], crewKilled, e.crew))
+        else:
+            self.newsMsgs.message("Hit {} with {}. {} took {} damage. Total damage {}. {} crew killed. Crew left {}"\
+                .format(e.captain.name, p.type, dmgDesc, dmg, e.stats[statName], crewKilled, e.crew))
+
+
+
+
+
+
     def meetShip(self, player, ship):
         self.newsMsgs.message("Met up with {} at sea".format(ship.captain.name))
         news = ship.captain.lastCity.news
@@ -144,11 +180,6 @@ class PlayState(GameState):
         newsItem = "{} said '{}'".format(ship.captain.name, newsItem)
         print newsItem
         self.newsMsgs.message(newsItem)
-
-    def projectileHit(self, p, e):
-        print "P {} hit E {}".format(p, e)
-        self.map.removeEntity(p, p.mapX, p.mapY)
-        self.projectilePurge.append(p)
 
     def moveEntity(self, entity):
         dx = config.spf * cos(entity.heading * degToRad) * entity.speed * config.speedAdjust + self.windEffectX
@@ -537,6 +568,12 @@ class PlayState(GameState):
         mixer.music.load(os.path.join(path, 'sailing.wav'))
         mixer.music.play(-1)
         castOff.play()
+
+        ship = self.map.addEntity(Ship(self.map, 'Schooner', self.player.ship.mapX + 3, self.player.ship.mapY - 2),
+                                  self.player.ship.mapX + 3, self.player.ship.mapY
+                                  - 2)
+        captain = Captain(ship)
+        ship.anchored = True
 
     def hideShops(self):
         for shop in config.city['possibleShops']:

@@ -71,19 +71,25 @@ class Ship(Entity):
         }
 
         self.inHold = 0
-    
+
+        # HACK calculate speed...
+        self.damageSails(0)
+
+    def killCrew(self, count):
+        self.crew -= count
+        self.crew = max(self.crew, 0)
+
     def damageHull(self, dmg):
         self.stats['hullDamage'] += dmg
         if self.stats['hullDamage'] >= 100:
             self.stats['hullDamage'] = 100
             self.sunk = True
-    
+
     def damageSails(self, dmg):
         self.stats['sailDamage'] += dmg
         if self.stats['sailDamage'] >= 100:
             self.stats['sailDamage'] = 100
-        self.maxSails = int(self.stats['sailDamage']/100.0 * config.maxSails)
-        print "Sails damaged by {}. New max {}".format(dmg, self.maxSails)
+        self.maxSails = int(config.maxSails - (self.stats['sailDamage']/100.0 * config.maxSails))
 
     @staticmethod
     def getBuyPrice(stats):
