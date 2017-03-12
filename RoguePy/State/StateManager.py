@@ -41,6 +41,7 @@ class StateManager():
   def getNextState(self):
     return self._nextState
   def setNextState(self, stateName):
+    print "setting next state {}".format(stateName)
     self._nextState = self._states[stateName]
 
   def doTick(self):

@@ -64,7 +64,7 @@ class PlayState(GameState):
 
     def beforeUnload(self):
         self.disableGameHandlers()
-        mixer.music.fadeout(500)
+
 
     def enableGameHandlers(self):
         self.enableHandler('generateNews')
@@ -387,26 +387,54 @@ class PlayState(GameState):
         else:
             self.player.ship.ch = '@'
         if self.player.ship.sunk or self.player.dead:
-            self.doHighScore()
+            self.playerDied()
 
 
         self.moveShip(self.player.ship)
         self.player.ship.updateCoolDown()
 
+    def playerDied(self):
+        mixer.music.stop()
+        mixer.music.load(os.path.join(path, 'gameover.wav'))
+        mixer.music.play(1)
+        diedX = self.view.width / 2 - 15
+        diedY = self.view.height / 2 - 4
+        diedW = 30
+        diedH = 8
 
+        frame = self.view.addElement(Elements.Frame(diedX, diedY, diedW, diedH, "You Died!"))
+        self.setFocus(frame)
+        frame.addElement(Elements.Text(1, 1, diedW - 2, 2, self.player.name))
+        frame.addElement(Elements.Label(1, 4, "Days At Sea"))
+        frame.addElement(Elements.Label(diedW - 9, 4, "{:>8}".format(self.player.daysAtSeaTotal)))
+        frame.addElement(Elements.Label(1, 5, "Shots Fired"))
+        frame.addElement(Elements.Label(diedW - 9, 5, "{:>8}".format(self.player.shotsFired)))
+        frame.addElement(Elements.Label(1, 6, "Rep"))
+        frame.addElement(Elements.Label(diedW - 4, 6, "{:>3}".format(self.player.rep)))
+        frame.setDefaultColors(Colors.lighter_sepia, Colors.darker_sepia, True)
+        frame.addElement(Elements.Label(1, 3, "Gold"))\
+            .setDefaultColors(Colors.gold, Colors.darker_sepia)
+        frame.addElement(Elements.Label(diedW - 9, 3, "{:>8}".format(self.player.gold)))\
+            .setDefaultColors(Colors.gold, Colors.darker_sepia)
+        frame.setKeyInputs({
+            'ok': {
+                'key': 'any',
+                'ch': None,
+                'fn': lambda: self.doHighScore(frame)
+            }
+        })
 
+        self.disableGameHandlers()
     def aiUpdate(self):
 
 
         toPurge = []
         for c in self.captains:
             if c.dead:
-                print "{} DIED!".format(c.name)
                 c.lastCity.addNews("{} was lost at sea.".format(c.name))
                 toPurge.append(c)
                 continue
             if c.ship.sunk:
-                print "{} Sunk!".format(c.name)
                 toPurge.append(c)
                 continue
 
@@ -471,8 +499,6 @@ class PlayState(GameState):
             util.deletePath(c.path)
             self.map.removeEntity(c.ship, c.ship.mapX, c.ship.mapY)
 
-
-
     def moveShip(self, ship):
         if ship.anchored:
             return False
@@ -486,7 +512,8 @@ class PlayState(GameState):
         if destination and destination.type is not 'water':
 
             ship.damageHull(config.damage['rocks'])
-
+            if ship.isPlayer and not self.player.dead:
+                hit.play()
             ship.x = oldX
             ship.y = oldY
             return False
@@ -960,13 +987,12 @@ class PlayState(GameState):
         pauseH = 4
 
         self.pauseMenu = View(pauseW, pauseH, pauseX, pauseY)
-        self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused")) \
-            .setDefaultForeground(Colors.darker_azure)
-        self.pauseMenu.addElement(Elements.Label(1, 1, "Esc    Back")) \
-            .setDefaultForeground(Colors.azure)
-        self.pauseMenu.addElement(Elements.Label(1, 2, " Q     Quit")) \
-            .setDefaultForeground(Colors.azure)
+        pauseFrame = self.pauseMenu.addElement(Elements.Frame(0, 0, pauseW, pauseH, "Game Paused"))
+        pauseFrame.addElement(Elements.Label(1, 1, "Esc    Back"))
+        pauseFrame.addElement(Elements.Label(1, 2, " Q     Quit"))
 
+        pauseFrame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia, True)\
+            .setDefaultForeground(Colors.light_sepia, False)
 
         #### Captain's Log Modal
         modalX = halfX / 4 - 1
@@ -1263,6 +1289,7 @@ class PlayState(GameState):
         self.introModal.addElement(Elements.Text(1, modalH - 7, modalW - 2, 1, pickACity)). \
             setDefaultForeground(Colors.dark_red)
 
+
     def showPause(self):
         mixer.music.pause()
         self.addView(self.pauseMenu)
@@ -1274,13 +1301,8 @@ class PlayState(GameState):
         self.removeView()
 
     def setupInputs(self):
-        def killKrew(self):
-            self.player.ship.crew -= 1
-            if self.player.ship.crew < 0:
-                self.player.ship.crew = 0
         # Inputs. =================================================================================
         self.pauseMenu.setKeyInputs({
-        # TODO remove
             'quit': {
                 'key': None,
                 'ch': 'q',
@@ -2163,8 +2185,10 @@ class PlayState(GameState):
         for score in util.getScores():
             self.cityMsgs.message(score)
 
-    def doHighScore(self):
-        mixer.music.stop()
-        mixer.quit()
+    def doHighScore(self, el=False):
+        if el:
+            el.hide()
+
+        mixer.music.fadeout(500)
         self.manager.getState('highScore').player = self.player
         self.manager.setNextState('highScore')
