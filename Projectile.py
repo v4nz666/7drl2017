@@ -8,7 +8,7 @@ import config
 class Projectile(Entity):
     def __init__(self, parent, type, x, y, tx, ty, heading, range, dmg):
         super(Projectile, self).__init__('projectile')
-        self.ch = '.'
+        self.ch = '*'
         self.heading = heading
         self.speed = config.projectile['speed']
         self.damage = dmg
