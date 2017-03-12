@@ -140,7 +140,7 @@ class Map:
             self.getCell(x, y).entity = e
             if e.canSee:
                 e.calculateFovMap()
-            return True
+            return e
         return False
 
     ### Pirates hacks

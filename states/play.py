@@ -78,6 +78,7 @@ class PlayState(GameState):
     def registerEventHandlers(self):
         self.map.on('enterCity', self.enterCity)
         self.map.on('projectileHit', self.projectileHit)
+        self.map.on('meetShip', self.meetShip)
 
         self.map.on('showReload', lambda e, f: self.reloadingLabel.show())
         self.map.on('hideReload', lambda e, f: self.reloadingLabel.hide())
@@ -130,7 +131,19 @@ class PlayState(GameState):
                 self.projectiles.remove(p)
                 self.map.removeEntity(p, p.mapX, p.mapY)
 
-
+    def meetShip(self, player, ship):
+        self.newsMsgs.message("Met up with {} at sea".format(ship.captain.name))
+        news = ship.captain.lastCity.news
+        if len(ship.captain.lastCity.news):
+            news = ship.captain.lastCity.news
+            newsItem = news[randint(len(news) - 1)]
+            pass
+        else:
+            newsItem = "Haven't seen much. Happy sailing!"
+            # self.newsPopup.message(newsItem)
+        newsItem = "{} said '{}'".format(ship.captain.name, newsItem)
+        print newsItem
+        self.newsMsgs.message(newsItem)
 
     def projectileHit(self, p, e):
         print "P {} hit E {}".format(p, e)
@@ -515,7 +528,7 @@ class PlayState(GameState):
         x, y = self.currentCity.portX, self.currentCity.portY
         ship.x = x
         ship.y = y
-        self.cityMsgs.message("Casting off from {}".format(self.currentCity.name))
+        self.newsMsgs.message("Cast off from {}".format(self.currentCity.name))
         self.map.addEntity(ship, x, y)
         self.currentCity = None
         self.player.atSea = True
@@ -746,6 +759,10 @@ class PlayState(GameState):
 
         self.logMap = self.logFrame.addElement(
             Elements.Map(1, 1, self.logFrame.width - 2, self.logFrame.height - 2, self.map))
+
+        self.logModal.setDefaultColors(Colors.lighter_sepia, Colors.dark_sepia, True)
+        self.newsMsgs.setDefaultForeground(Colors.lightest_sepia)
+
         self.logMap.isStatic = True
         self.logMap.showFog = True
         self.mapOverlay = self.logMap.addElement(Elements.Element(0, 0, self.logMap.width, self.logMap.height))
@@ -781,7 +798,7 @@ class PlayState(GameState):
         self.infoPanel.addElement(Elements.Label(7, 7, "<SAIL>")).setDefaultForeground(Colors.brass)
         self.sailSlider = self.infoPanel.addElement(Elements.Slider(4, 8, 12, 0, config.maxSails)). \
             setDefaultForeground(Colors.brass)
-        self.reloadingLabel = self.infoPanel.addElement(Elements.Label(4, 9, "- reloading -"))\
+        self.reloadingLabel = self.infoPanel.addElement(Elements.Label(4, 9, "- reloading -")) \
             .setDefaultForeground(Colors.dark_red).hide()
 
         self.infoPanel.addElement(Elements.Label(2, 10, "CAPTAIN")).setDefaultForeground(Colors.flame)
@@ -890,12 +907,10 @@ class PlayState(GameState):
         self.newsTab = self.logModal.addElement(Elements.Frame(9, 3, 8, 2, "(N)ews")).disable()
 
         self.logFrame = self.logModal.addElement(Elements.Frame(0, 4, self.logModal.width, self.logModal.height - 4))
-        self.modalBackLabel = self.logModal.addElement(Elements.Label(3, modalH - 1, "TAB - Back"))
+        self.newsMsgs = self.logFrame.addElement(
+            Elements.MessageScroller(2, 1, self.logFrame.width - 4, self.logFrame.height - 3)).hide()
 
-        frame = self.logFrame
-        # logMap set in setMap
-        self.logNews = frame.addElement(Elements.List(1, 1, frame.width - 2, frame.height - 2)).hide()
-
+        self.modalBackLabel = self.logFrame.addElement(Elements.Label(3, self.logFrame.height- 1, "TAB - Back"))
 
         #### City Modal
         modalX = halfX / 4
@@ -1298,8 +1313,7 @@ class PlayState(GameState):
             'hideModal2': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': lambda:
-                self.removeView() and self.enableGameHandlers()
+                'fn': self.showPause
             },
             'showMap': {
                 'key': None,
@@ -1594,6 +1608,7 @@ class PlayState(GameState):
             news = self.currentCity.news[index]
             self.currentCity.removeNews(index)
         self.cityMsgs.message(news)
+        self.newsMsgs.message("{}: {}".format(self.currentCity.name, news))
 
 
     def hireCrew(self):
@@ -1834,10 +1849,11 @@ class PlayState(GameState):
             element.enable()
         if name == "tavern":
             tavern.play()
-        elif name == "generalstore":
+        elif name == "generalStore":
             store.play()
         else:
-            pass
+            shipyard.play()
+
         #TODO SHIPYARD soudn
 
     def updateTavernUI(self):
@@ -1887,6 +1903,9 @@ class PlayState(GameState):
                         label:
                             lambda i: self.removeView() and self.enterCity(self.player, cities[i])
                     })
+                elif isinstance(c.entity, Ship) and c.entity is not self.player.ship:
+                    print "Ship at {},{}.. Player {},{}".format(x, y, self.player.ship.mapX, self.player.ship.mapY)
+                    self.map.trigger('meetShip', self.player, ship)
             if len(cityMenu):
                 self.citySelection(cityMenu)
 
@@ -1954,15 +1973,15 @@ class PlayState(GameState):
         self.mapTab.enable()
         self.logMap.show()
         self.newsTab.disable()
-        self.logNews.hide()
+        self.newsMsgs.hide()
 
     def showNews(self):
-        if self.logNews.visible:
+        if self.newsMsgs.visible:
             return
         self.mapTab.disable()
         self.logMap.hide()
         self.newsTab.enable()
-        self.logNews.show()
+        self.newsMsgs.show()
 
     def openLogModal(self):
         self.disableHandler('shipsUpdate')
@@ -1995,6 +2014,8 @@ class PlayState(GameState):
         # TODO Let the player pick from a few randomly generated captains
         self.player = Captain()
         self.player.gold = 700
+        self.player.news = []
+
         self.mapElement.setPlayer(self.player)
 
         self.map.trigger('enterCity', self.player, startingCity)

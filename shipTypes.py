@@ -1,3 +1,5 @@
+import sys
+
 from RoguePy.UI import Colors
 from util import randint
 
@@ -77,7 +79,7 @@ shipTypes = {
         'hullDamage': 0,
         'sailDamage': 0,
         'price': 1000,
-        'color': Colors.darkest_blue
+        'color': Colors.darker_blue
     },
     "Sloop": {
         'maxSpeed': 30,
@@ -104,5 +106,6 @@ shipTypes = {
 }
 
 def getRandomType():
-    types = shipTypes.keys()
-    return types[randint(len(types) - 1)]
+    index = randint(len(shipTypes) - 1)
+    key = shipTypes.keys()[index]
+    return key

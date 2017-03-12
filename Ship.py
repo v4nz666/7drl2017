@@ -6,6 +6,7 @@ from Projectile import Projectile
 from RoguePy.libtcod import libtcod
 from RoguePy.Game import Entity
 from shipTypes import shipTypes
+from sounds import fail
 from util import randint
 
 class Ship(Entity):
@@ -215,7 +216,7 @@ class Ship(Entity):
     def fire(self, targetX, targetY, _type, _range):
         print "pulling the trigger"
         bearing = util.bearing(self.mapX, self.mapY, targetX, targetY)
-        shot = Projectile(self, _type, self.mapX, self.mapY, targetX, targetY, bearing, _range)
+        shot = Projectile(self, _type, self.mapX, self.mapY, targetX, targetY, bearing, _range, self.stats['guns'] / 2)
         self.map.addEntity(shot, shot.mapX, shot.mapY)
         self.reloading = True
         self.coolDown = 0
@@ -226,16 +227,16 @@ class Ship(Entity):
     def fireCannon(self, x, y, _range):
         print "cannonballs"
         if not self.cannonballs:
-            # TODO don't fire
-            pass
+            fail.play()
+        self.cannonballs -= self.stats['guns'] / 2
         return self.fire(x, y, 'cannon', _range)
 
-    def fireChain(self, x, y, range):
+    def fireChain(self, x, y, _range):
         print "chainshot"
         if not self.chainshot:
-            # TODO don't fire
-            pass
-        return self.fire(x, y, 'chain', range)
+            fail.play()
+        self.chainshot -= self.stats['guns'] / 2
+        return self.fire(x, y, 'chain', _range)
 
     def updateCoolDown(self):
         if self.reloading:

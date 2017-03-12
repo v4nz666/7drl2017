@@ -38,6 +38,9 @@ class Captain(object):
         self.path = None
 
         self.dead = False
+
+        if ship:
+            self.setShip(ship)
     
     def updateViewRadius(self):
         self.ship.viewRadius = min(max(self.skills['nav'], config.ship['minView']), config.ship['maxView'])
@@ -109,6 +112,7 @@ class Captain(object):
     def setShip(self, ship):
         print "Setting ship with goods{}".format(ship.goods)
         self.ship = ship
+        self.ship.captain = self
         self.updateViewRadius()
 
     @property

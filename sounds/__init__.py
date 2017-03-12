@@ -38,6 +38,7 @@ noGossip = mixer.Sound(os.path.join(path, 'noGossip.wav'))
 gossip = mixer.Sound(os.path.join(path, 'gossip.wav'))
 brothel = mixer.Sound(os.path.join(path, 'brothel.wav'))
 lowMorale = mixer.Sound(os.path.join(path, 'lowMorale.wav'))
+shipyard = mixer.Sound(os.path.join(path, 'shipyard.wav'))
 
 gossip.set_volume(0.1)
 
