@@ -40,6 +40,7 @@ brothel = mixer.Sound(os.path.join(path, 'brothel.wav'))
 lowMorale = mixer.Sound(os.path.join(path, 'lowMorale.wav'))
 shipyard = mixer.Sound(os.path.join(path, 'shipyard.wav'))
 spawn = mixer.Sound(os.path.join(path, 'spawn.wav'))
+gameover = mixer.Sound(os.path.join(path, 'gameover.wav'))
 
 gossip.set_volume(0.1)
 
