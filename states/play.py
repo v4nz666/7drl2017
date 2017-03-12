@@ -358,8 +358,10 @@ class PlayState(GameState):
             return
 
         if self.player.ship.sunk or self.player.dead:
-            print "YOU DIED!"
-            sys.exit()
+            
+            self.manager.getState('highScore').player = self.player
+            self.manager.setNextState('highScore')
+
 
         self.moveShip(self.player.ship)
         self.player.ship.updateCoolDown()

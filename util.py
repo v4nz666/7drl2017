@@ -230,11 +230,20 @@ def getScores():
     
     scores = []
     
-    for entry in jsonData['dreamlo']['leaderboard']['entry']:
+    if len(jsonData['dreamlo']['leaderboard']) > 0:
         
-        date = entry['date'].split(" ")[0]
         
-        scores.append( entry['name'] + ":" + entry['score'] + ":" + date)
-    
-    
+        entries = jsonData['dreamlo']['leaderboard']['entry']
+        
+        if isinstance(entries, list):
+            for entry in entries:
+                scores.append(getScore(entry))
+        else:
+            scores.append(getScore(entries))
+
     return scores
+
+def getScore(entry):
+    parts = entry['date'].split(" ")
+    date = parts[0]
+    return entry['name'] + ":" + entry['score'] + ":" + date

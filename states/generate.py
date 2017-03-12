@@ -70,8 +70,10 @@ class GenerateState(GameState):
         loadingText = "Generating"
         loadingX = (self.view.width - len(loadingText)) / 2
         loadingY = self.view.height / 2 - 3
-        self.loadingLabel = self.view.addElement(Elements.Label(loadingX, loadingY, loadingText)) \
-            .setDefaultForeground(Colors.dark_azure)
+        self.view.addElement(Elements.Element(0, 0, self.view.width, self.view.height))
+        self.loadingLabel = self.view.addElement(Elements.Label(loadingX, loadingY, loadingText)) 
+        
+        self.view.setDefaultColors(Colors.gold, Colors.darker_sepia, True)
 
     def setupMapView(self):
         self.mapElement = Elements.Map(0, 0, config.layout['uiWidth'], config.layout['uiHeight'], self.map)

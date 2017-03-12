@@ -51,7 +51,7 @@ class SplashState(GameState):
             'next': {
                 'key': 'any',
                 'ch': None,
-                'fn': lambda: self.manager.setNextState('generate')
+                'fn': lambda: self.manager.setNextState('mainMenu')
             }
         })
 

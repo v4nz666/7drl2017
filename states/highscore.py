@@ -11,23 +11,33 @@ from RoguePy.libtcod import libtcod
 
 class HighScoreState(GameState):
     def init(self):
+        self.player = None
         self.setupView()
         self.setupInputs()
+        self.addHandler('draw', 1, self.drawScreen)
 
     def beforeLoad(self):
-        pass
+        if (self.player is not None):
+            # add score
+            util.addScore(self.player.name, self.player.gold)
+        self.scoresAndNames = util.getScores()
+        
+        
+    
+    def beforeUnload(self):
+        self.player = None
     def setupView(self):
+        
+        
         self.frame = self.view.addElement(
             Elements.Frame(0, 0, config.layout['uiWidth'], config.layout['uiHeight'], "Leaderboard")
         )
         
+    def drawScreen(self):
+           
         totalWidth = config.layout['uiWidth'] - 4
         scoreListWidth = totalWidth - 11
         height = config.layout['uiHeight'] - 4;
-
-
-        # add score
-        #util.addScore(self.player.name, self.player.gold)
         
         # display Leaderboard
         
@@ -43,13 +53,10 @@ class HighScoreState(GameState):
         bar._chars = {k: ' ' for k in ['tl', 't', 'tr', 'r', 'br', 'b', 'bl', 'l']}
         bar._chars['t'] = libtcod.CHAR_HLINE
         
-        
-        scoresAndNames = util.getScores()
-        
         scores = []
         dates = []
         
-        for item in scoresAndNames:
+        for item in self.scoresAndNames:
             parts = item.split(":")
             
             line = self.fillSpace(scoreListWidth, parts[0], parts[1], ".")
@@ -66,11 +73,13 @@ class HighScoreState(GameState):
         
         
         
-        self.frame.setDefaultColors(Colors.lightest_sepia, Colors.darker_sepia,True)
+        self.frame.setDefaultColors(Colors.lightest_sepia, Colors.darkest_sepia,True)
         self.frame.setDefaultForeground(Colors.gold)
         headers.setDefaultForeground(Colors.lightest_sepia)
         dateHeader.setDefaultForeground(Colors.lightest_sepia)
         bar.setDefaultForeground(Colors.gold)
+        
+        self.removeHandler('draw')
 
     def setupInputs(self):
         # Inputs. =================================================================================
@@ -78,7 +87,7 @@ class HighScoreState(GameState):
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': lambda: self.manager.setNextState('mainMenu')
             },
             'scrollUp': {
                 'key': Keys.Up,
