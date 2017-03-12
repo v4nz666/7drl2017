@@ -224,7 +224,10 @@ def getScores():
     scores = []
     
     for entry in jsonData['dreamlo']['leaderboard']['entry']:
-        scores.append( entry['name'] + ": " + entry['score'])
+        
+        date = entry['date'].split(" ")[0]
+        
+        scores.append( entry['name'] + ":" + entry['score'] + ":" + date)
     
     
     return scores
