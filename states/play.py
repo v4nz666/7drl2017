@@ -380,6 +380,10 @@ class PlayState(GameState):
         if not self.player.ship:
             return
 
+        if self.player.ship.heading < 90 or self.player.ship.heading >= 270:
+            self.player.ship.ch = '%'
+        else:
+            self.player.ship.ch = '@'
         if self.player.ship.sunk or self.player.dead:
             print "YOU DIED!"
             sys.exit()
@@ -407,6 +411,11 @@ class PlayState(GameState):
                 continue
 
             c.ship.updateCoolDown()
+
+            if c.ship.heading < 90 or c.ship.heading >= 270:
+                c.ship.ch = '%'
+            else:
+                c.ship.ch = '@'
 
             if c.attackingPlayer:
 
