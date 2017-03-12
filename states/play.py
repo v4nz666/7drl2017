@@ -247,7 +247,7 @@ class PlayState(GameState):
             while not len(neighbours):
                 city = self.map.cities[self.map.cities.keys()[randint(len(self.map.cities) - 1)]]
                 neighbours = city.neighbours
-            captain = Captain()
+            captain = Captain(self.player.skills['nav'], self.player.skills['gun'])
 
             shipType = getRandomType()
             try:
@@ -409,6 +409,7 @@ class PlayState(GameState):
             c.ship.updateCoolDown()
 
             if c.attackingPlayer:
+
                 px, py = self.player.ship.mapX, self.player.ship.mapY
                 if c.ship.canFire(px, py, c):
 
@@ -429,7 +430,14 @@ class PlayState(GameState):
                 c.recalculateHeading = False
                 c.sinceRecalc = 0
                 c.ship.anchored = False
-                util.checkPath(self.map, c.ship.mapX, c.ship.mapY, c.destination.portX, c.destination.portY, c.path)
+
+                tx, ty = c.destination.portX, c.destination.portY
+                if c.attackingPlayer:
+                    dist = util.dist(c.ship.mapX, c.ship.mapY, self.player.ship.mapX, self.player.ship.mapY)
+                    if dist < c.ship.canSee:
+                        tx, ty = self.player.ship.mapX, self.player.ship.mapY
+
+                util.checkPath(self.map, c.ship.mapX, c.ship.mapY, tx, ty, c.path)
 
                 if not util.pathSize(c.path):
                     c.dead = True
@@ -442,7 +450,6 @@ class PlayState(GameState):
 
                 heading = int(util.bearing(x1, y1, x2, y2))
                 c.ship.heading = heading
-                # TODO full speed all the time?
                 c.ship.sails = config.maxSails
             if self.moveShip(c.ship):
                 if c.sinceRecalc >= config.captains['fovRecalcCooldown']:
@@ -2101,7 +2108,7 @@ class PlayState(GameState):
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
         # TODO Let the player pick from a few randomly generated captains
-        self.player = Captain()
+        self.player = Captain(10, 10)
         self.player.gold = 700
         self.player.rep = 50
         self.player.news = []
