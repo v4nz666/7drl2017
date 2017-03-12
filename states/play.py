@@ -233,8 +233,7 @@ class PlayState(GameState):
             self.updateCityUI()
 
     def generateCaptains(self):
-        #TODO generate a random number
-        count = 4
+        count = randint(4)
         cityFails = 0
 
         while count and len(self.captains) < config.captains['maxCount']:
@@ -398,8 +397,6 @@ class PlayState(GameState):
 
         toPurge = []
         for c in self.captains:
-        #TODO remove
-        # for c in [self.testCaptain]:
             if c.dead:
                 print "{} DIED!".format(c.name)
                 c.lastCity.addNews("{} was lost at sea.".format(c.name))
@@ -496,11 +493,6 @@ class PlayState(GameState):
         self.mapElement.setDirty(True)
 
         ship.calculateFovMap()
-        neighbours = self.map.getNeighbours(ship.mapX, ship.mapY)
-        for nx, ny in neighbours:
-            n = neighbours[nx, ny]
-            #TODO Ship detection here...
-            #if isinstance(n.entity, Ship):
 
         if ship.isPlayer:
             self.mapElement.center(ship.mapX, ship.mapY)
@@ -617,14 +609,6 @@ class PlayState(GameState):
         mixer.music.load(os.path.join(path, 'sailing.wav'))
         mixer.music.play(-1)
         castOff.play()
-
-        #TODO remove
-        # self.testShip = self.map.addEntity(
-        # Ship(self.map, 'Schooner', self.player.ship.mapX + 3, self.player.ship.mapY - 2),
-        #                                       self.player.ship.mapX, self.player.ship.mapY - 2)
-        # self.testCaptain = Captain(self.testShip)
-        # self.testShip.anchored = True
-        # self.testCaptain.opinion = 0
 
     def hideShops(self):
         for shop in config.city['possibleShops']:
@@ -1304,12 +1288,6 @@ class PlayState(GameState):
             },
         })
         self.view.setKeyInputs({
-            #TODO remove
-            'KILL': {
-                'key': None,
-                'ch': 'K',
-                'fn': lambda: killKrew(self)
-            },
             'pause': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1415,18 +1393,6 @@ class PlayState(GameState):
         })
 
         self.cityModal.setKeyInputs({
-            #TODO remove
-            'postScore': {
-                'key': None,
-                'ch': '[',
-                'fn': self.postScore
-            },
-            'getScore': {
-                'key': None,
-                'ch': ']',
-                'fn': self.getScore
-            },
-
             'pause': {
                 'key': Keys.Escape,
                 'ch': None,
@@ -1953,8 +1919,6 @@ class PlayState(GameState):
         else:
             shipyard.play()
 
-        #TODO SHIPYARD soudn
-
     def updateTavernUI(self):
         minCrew = "n/a"
         maxCrew = "n/a"
@@ -2116,7 +2080,6 @@ class PlayState(GameState):
         self.mapElement.center(startingCity.portX, startingCity.portY)
         self.logMap.setDirectionalInputHandler(self.moveMap)
 
-        # TODO Let the player pick from a few randomly generated captains
         self.player = Captain(10, 10)
         self.player.gold = 700
         self.player.rep = 50
@@ -2173,7 +2136,7 @@ class PlayState(GameState):
             else:
                 self.cityLabel = None
 
-        # TODO: Hack to deal with moving the cursor over the buggy section of the map
+        # HACK to deal with moving the cursor over the buggy section of the map
         #   (See https://github.com/v4nz666/7drl2017/issues/19)
         except AttributeError:
             print 'failed at {},{}'.format(self.mapX, self.mapY)

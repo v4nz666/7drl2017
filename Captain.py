@@ -10,7 +10,6 @@ from util import randint, getColor, getPirateName
 
 class Captain(object):
     def __init__(self, navBase, gunBase, ship=None):
-        # TODO replace with name generation
         self.name = getPirateName()
         self.morale = 50
 
