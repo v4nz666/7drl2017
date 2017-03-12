@@ -18,8 +18,6 @@ class GenerateState(GameState):
     def init(self):
         self.setupView()
         self.setupInputs()
-        self.focusX = config.layout['uiWidth'] / 2
-        self.focusY = config.layout['uiHeight'] / 2
 
     def initCities(self):
         self.cities = [
@@ -58,13 +56,16 @@ class GenerateState(GameState):
         ]
 
     def beforeLoad(self):
+        self.focusX = config.layout['uiWidth'] / 2
+        self.focusY = config.layout['uiHeight'] / 2
         self.initCities()
         self.addHandler('gen', 1, self.generateWorld)
 
     def beforeUnload(self):
         mixer.music.fadeout(500)
+        self.mapElement.hide()
+        # self.manager.ui.refresh(self.view)
         pass
-
 
     def setupView(self):
         loadingText = "Generating"
@@ -87,7 +88,7 @@ class GenerateState(GameState):
         keyFrame.bgOpacity = 0
         self.mapElement.addElement(keyFrame).setDefaultColors(Colors.white, Colors.darker_grey)
 
-        keysString = 'Spc - Play | R - Regenerate | Esc - Quit'
+        keysString = 'Spc - Play | R - Regenerate | Esc - Back'
         keys = Elements.Label(1, 1, keysString) \
             .setDefaultForeground(Colors.gold)
         keys.bgOpacity = 0
@@ -105,7 +106,7 @@ class GenerateState(GameState):
             'quit': {
                 'key': Keys.Escape,
                 'ch': None,
-                'fn': self.quit
+                'fn': lambda: self.manager.setNextState('mainMenu')
             },
             'regen': {
                 'key': None,

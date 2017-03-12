@@ -28,15 +28,6 @@ class PlayState(GameState):
         self.setupView()
         self.setupInputs()
 
-        self.windSpeed = 5.0
-        self.windDir = 180.0
-        self.windEffectX = 0.0
-        self.windEffectY = 0.0
-
-        self.captains = []
-        self.projectiles = []
-        self.projectilePurge = []
-
         self.addHandler('fpsUpdate', 60, self.fpsUpdate)
         self.addHandler('windUpdate', config.fps * 2, self.windUpdate)
         self.addHandler('shipsUpdate', 1, self.shipsUpdate, False)
@@ -52,6 +43,28 @@ class PlayState(GameState):
         self.addHandler('generateNews', config.fps * 10, self.generateNews)
         self.addHandler('citiesUpdate', config.fps * 60, self.citiesUpdate)
         self.addHandler('generateCaptains', config.captains['genDelay'], self.generateCaptains, False)
+
+    def beforeLoad(self):
+        self.windSpeed = 5.0
+        self.windDir = 180.0
+        self.windEffectX = 0.0
+        self.windEffectY = 0.0
+
+        self.player = None
+        self.captains = []
+        self.projectiles = []
+        self.projectilePurge = []
+
+        self.manager.updateUi(self)
+        self.addView(self.introModal)
+        self.addHandler('intro', 1, self.doIntro)
+        mixer.music.stop()
+        mixer.music.queue(os.path.join(path, 'city.wav'))
+        mixer.music.play(-1)
+
+    def beforeUnload(self):
+        self.disableGameHandlers()
+        mixer.music.fadeout(500)
 
     def enableGameHandlers(self):
         self.enableHandler('generateNews')
@@ -83,17 +96,6 @@ class PlayState(GameState):
 
         self.map.on('showReload', lambda e, f: self.reloadingLabel.show())
         self.map.on('hideReload', lambda e, f: self.reloadingLabel.hide())
-
-    def beforeLoad(self):
-        self.manager.updateUi(self)
-        self.addView(self.introModal)
-        self.addHandler('intro', 1, self.doIntro)
-        mixer.music.stop()
-        mixer.music.queue(os.path.join(path, 'city.wav'))
-        mixer.music.play(-1)
-
-    def beforeUnload(self):
-        mixer.music.fadeout(500)
 
     def renderProjectileOverlay(self):
         for p in self.projectiles:

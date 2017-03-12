@@ -89,6 +89,26 @@ class HighScoreState(GameState):
                 'ch': None,
                 'fn': lambda: self.manager.setNextState('mainMenu')
             },
+            'quit1': {
+                'key': Keys.Enter,
+                'ch': None,
+                'fn': lambda: self.manager.setNextState('mainMenu')
+            },
+            'quit2': {
+                'key': Keys.Space,
+                'ch': None,
+                'fn': lambda: self.manager.setNextState('mainMenu')
+            },
+            'quit3': {
+                'key': Keys.NumPadEnter,
+                'ch': None,
+                'fn': lambda: self.manager.setNextState('mainMenu')
+            },
+            'quit4': {
+                'key': Keys.BackSpace,
+                'ch': None,
+                'fn': lambda: self.manager.setNextState('mainMenu')
+            },
             'scrollUp': {
                 'key': Keys.Up,
                 'ch': 'w',
