@@ -197,7 +197,6 @@ class CellType:
         self.fg = fg
         self.bg = bg
         for opt in opts:
-                print "setting {1} to {2}", opt, opts[opt]
                 setattr(self, opt, opts[opt])
 
     def __str__(self):

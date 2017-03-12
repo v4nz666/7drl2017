@@ -180,14 +180,12 @@ def checkPath(map, x1, y1, x2, y2, myPath=None):
 
     c1 = map.getCell(x1, y1)
     c2 = map.getCell(x2, y2)
-    # print "Computing from {},{} {} to {},{} {}".format(x1, y1, c1, x2, y2, c2)
 
     libtcod.path_compute(path, x1, y1, x2, y2)
     s = libtcod.path_size(path)
     if delete:
         deletePath(path)
     if s:
-        # print "Got path, length", s
         return True
     else:
         return False
@@ -214,12 +212,10 @@ host = "http://dreamlo.com/lb/"
 
 
 def addScore(name, score):
-    
+
     url = host + private + "/add/" + name + "/" + str(score)
     response = requests.get(url)
-    
-    print response.text
-    
+    print "Response from high score server: {}".format(response)
     
 def getScores():
     

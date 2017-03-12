@@ -75,7 +75,6 @@ class CreditsState(GameState):
 
     @staticmethod
     def quit():
-        print "Quitting"
         sys.exit()
         
     # Fill a string of length 1 with str1, and st2, filling the space between with fillChar

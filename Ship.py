@@ -48,9 +48,7 @@ class Ship(Entity):
                     continue
 
                 attempts += 1
-                print "trying again"
                 if attempts >= 10:
-                    print "too many tries, aborting"
                     raise ShipPlacementError
 
         self.anchored = True
@@ -92,7 +90,6 @@ class Ship(Entity):
         if self.stats['sailDamage'] >= 100:
             self.stats['sailDamage'] = 100
         self.maxSails = int(config.maxSails - (self.stats['sailDamage']/100.0 * config.maxSails))
-        print "New max sails [{}]".format(self.maxSails)
 
     @staticmethod
     def getBuyPrice(stats):
@@ -204,7 +201,6 @@ class Ship(Entity):
 
     def canFire(self, x, y, captain):
         if self.reloading:
-            # print "reloading"
             return False
         maxDist = max(captain.skills['gun'], config.captains['minRange'])
         if util.dist(self.mapX, self.mapY, x, y) > maxDist:
@@ -217,37 +213,35 @@ class Ship(Entity):
         elif bearing >= 180:
             bearing -= 180
         if 50 <= abs(bearing) <= 130:
-            print "firing from {},{} -> {},{}".format(self.mapX, self.mapY, x, y)
             return True
         else:
-            # print "out of cone... Bearing {} Heading {}".format(bearing, self.heading)
             return False
 
     def fire(self, targetX, targetY, _type, _range):
-        print "pulling the trigger from {},{}".format(self.mapX, self.mapY)
         bearing = util.bearing(self.mapX, self.mapY, targetX, targetY)
         shot = Projectile(self, _type, self.mapX, self.mapY, targetX, targetY, bearing, _range, self.stats['guns'] / 2)
         self.map.addEntity(shot, shot.mapX, shot.mapY)
         self.reloading = True
         self.coolDown = 0
         self.map.trigger('showReload', self, self)
-        print shot
         return shot
 
     def fireCannon(self, x, y, _range):
-        print "cannonballs"
         if not self.cannonballs:
             return False
 
         self.cannonballs -= self.stats['guns'] / 2
+        if self.cannonballs < 0:
+            self.cannonballs = 0
         return self.fire(x, y, 'cannon', _range)
 
     def fireChain(self, x, y, _range):
-        print "chainshot"
         if not self.chainshot:
             return False
 
         self.chainshot -= self.stats['guns'] / 2
+        if self.chainshot < 0:
+            self.chainshot = 0
         return self.fire(x, y, 'chain', _range)
 
     def updateCoolDown(self):

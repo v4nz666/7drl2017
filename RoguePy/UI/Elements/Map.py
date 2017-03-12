@@ -114,7 +114,6 @@ class Map(Element):
   #   a subset of the inputs, not the whole input set.
   # TODO: If input binding is streamlined, this won't work anymore.
   def setDirectionalInputHandler(self, fn):
-    print "Inputs set"
     from RoguePy.Input import Keys
     self._keyBoardInputs['move_sw'] = {
         'key' : Keys.NumPad1,

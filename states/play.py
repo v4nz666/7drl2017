@@ -115,7 +115,6 @@ class PlayState(GameState):
             oldX, oldY = p.mapX, p.mapY
             if self.moveEntity(p):
                 p.distanceTravelled += 1
-                print "projectile moved to {},{}".format(p.mapX, p.mapY)
                 self.map.removeEntity(p, oldX, oldY)
                 self.map.addEntity(p, p.mapX, p.mapY)
 
@@ -139,7 +138,6 @@ class PlayState(GameState):
                     self.map.removeEntity(p, p.mapX, p.mapY)
 
     def projectileHit(self, p, e):
-        print "P {} hit E {}".format(p, e)
         if not isinstance(e, Ship):
             return
 
@@ -176,7 +174,6 @@ class PlayState(GameState):
                 if not e.isPirate:
                     self.newsMsgs.message("You sunk {}'s ship! The other captains won't be too amused.")
                     self.player.rep -= config.rep['sink']
-                    print "new rep {}".format(self.player.rep)
                 else:
                     self.newsMsgs.message("You sunk the Pirate {}! Word will spread of your good deeds.")
                     self.player.rep += config.rep['sink']
@@ -200,7 +197,6 @@ class PlayState(GameState):
             else:
                 newsItem = "Haven't seen much. Happy sailing!"
         newsItem = "{} said '{}'".format(ship.captain.name, newsItem)
-        print newsItem
         self.newsMsgs.message(newsItem)
 
     def moveEntity(self, entity):
@@ -313,12 +309,10 @@ class PlayState(GameState):
             if self.player.daysWithoutFood >= config.morale['daysToStarve']:
                 if self.player.ship.crew > 0:
                     self.player.ship.crew -= 1
-                print "Starved [{}]".format(config.morale['crewStarved'])
                 self.player.morale -= config.morale['crewStarved']
                 self.player.daysWithoutFood = 0
             else:
                 self.player.daysWithoutFood += 1
-                print "Food [{}]".format(config.morale['noFood'])
                 self.player.morale -= config.morale['noFood']
 
             if self.player.morale < 0:
@@ -332,7 +326,6 @@ class PlayState(GameState):
             return
 
         if self.player.ship.goods['rum'] < 1:
-            print "Rum [{}]".format(config.morale['noRum'])
             self.player.morale -= config.morale['noRum']
             if self.player.morale < 0:
                 self.player.morale = 0
@@ -1654,24 +1647,19 @@ class PlayState(GameState):
 
     def fire(self, mouse, left=True):
 
-        print "Firing..."
         if not (self.player and self.player.ship):
-            print "not :("
             return
         charSize = libtcod.sys_get_char_size()
         x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
 
         if x == -1 or y == -1:
-            print "offscreen"
             return
 
         if left and self.player.ship.cannonballs <= 0:
             fail.play()
-            print "no cannonball"
             return
         elif self.player.ship.chainshot <= 0:
             fail.play()
-            print "no chain"
             return
 
         if self.player.ship.canFire(x, y, self.player):
@@ -1685,7 +1673,6 @@ class PlayState(GameState):
                 self.projectiles.append(result)
                 cannon.play()
         else:
-            print "can't fire"
             fail.play()
 
     def gossip(self):
@@ -1855,7 +1842,6 @@ class PlayState(GameState):
         if result is not False:
             castOff.play()
             salePrice, goodsPrice = result[0], result[1]
-            print "sale, goods: {},{}".format(salePrice, goodsPrice)
             self.cityMsgs.message("Bought a new {}!".format(shipType))
 
             if salePrice:
@@ -2001,7 +1987,6 @@ class PlayState(GameState):
                             lambda i: self.removeView() and self.enterCity(self.player, cities[i])
                     })
                 elif isinstance(c.entity, Ship) and c.entity is not self.player.ship:
-                    print "Ship at {},{}.. Player {},{}".format(x, y, self.player.ship.mapX, self.player.ship.mapY)
                     self.map.trigger('meetShip', self.player, ship)
             if len(cityMenu):
                 self.citySelection(cityMenu)
@@ -2099,7 +2084,6 @@ class PlayState(GameState):
         startingCity = cities[index]
 
         for n in startingCity.neighbours:
-            print "Seeing {}".format(n.name)
             self.map.getCell(n.x, n.y).seen = True
 
         types = ['Caravel', 'Sloop']
@@ -2173,7 +2157,7 @@ class PlayState(GameState):
         # HACK to deal with moving the cursor over the buggy section of the map
         #   (See https://github.com/v4nz666/7drl2017/issues/19)
         except AttributeError:
-            print 'failed at {},{}'.format(self.mapX, self.mapY)
+            pass
 
     def postScore(self):
         util.addScore(self.player.name, self.player.gold)

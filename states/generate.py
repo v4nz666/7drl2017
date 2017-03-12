@@ -115,21 +115,6 @@ class GenerateState(GameState):
             }
         })
 
-        def leftClick(mouse):
-            print "Left click"
-            charSize = libtcod.sys_get_char_size()
-            x, y = self.mapElement.fromScreen(mouse.x / charSize[0], mouse.y / charSize[1])
-
-            if x == -1 or y == -1:
-                return
-            c = self.map.getCell(x, y)
-            if c.entity:
-                print c.entity
-
-        self.view.setMouseInputs({
-            'lClick': leftClick
-        })
-
     def regenerate(self):
         self.beforeUnload()
         self.beforeLoad()
@@ -204,10 +189,7 @@ class GenerateState(GameState):
                 if len(self.map.getMajorCities()) >= 4:
                     self.setupMapView()
                     self.removeHandler('gen')
-                    print "Done..."
                     return True
-                else:
-                    print "Too few major cities. Retrying"
             else:
                 print "invalid map. Retrying"
 
@@ -238,8 +220,6 @@ class GenerateState(GameState):
         maxX = self.map.width - 1
         maxY = self.map.height - 1
 
-        print "wh, xy", self.map.width, self.map.height, maxX, maxY
-
         c = self.map.getCell(0, 0)
         if c and c.type == "water" and util.checkPath(self.map, 0, 0, maxX, maxY):
             return 0, 0
@@ -260,7 +240,6 @@ class GenerateState(GameState):
         cell = self.map.getCell(x, y)
 
         if cell.entity:
-            print "Entity present"
             return False
 
         waterNeighbours = self.map.getNeighboursOfType('water', x, y)
@@ -272,7 +251,6 @@ class GenerateState(GameState):
             for nx, ny in grassNeighbours:
                 c = grassNeighbours[nx, ny]
                 if c.entity:
-                    print "Neighbouring tile has entity"
                     return False
 
         city = None
@@ -280,13 +258,11 @@ class GenerateState(GameState):
             if (nx, ny) == (x, y):
                 continue
             if not util.checkPath(self.map, nx, ny, self.testPoint[0], self.testPoint[1]):
-                print "no path to ocean"
                 continue
             else:
                 city = self.map.addCity(x, y, nx, ny, self.getCityName())
                 break
         if not city:
-            print "Couldn't path to ocean"
             return False
         return True
 
@@ -313,5 +289,5 @@ class GenerateState(GameState):
     def quit():
         mixer.music.stop()
         mixer.quit()
-        print "Quitting"
         sys.exit()
+

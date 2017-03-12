@@ -68,24 +68,18 @@ class City(Entity):
     def shortage(self):
         goods = self.goods.keys()
         item = goods[randint(len(goods) - 1)]
-        print "{} shortage at {}".format(item, self.name)
-        print "old price {}, quantity {}".format(self.prices[item], self.goods[item])
         quantity = randint(config.economy['scarceThreshold'])
         self.goods[item] = quantity
         self.prices[item] = self.calculateBuySellPrice(item)
-        print "new price {}, quantity {}".format(self.prices[item], self.goods[item])
 
         return item
 
     def surplus(self):
         goods = self.goods.keys()
         item = goods[randint(len(goods) - 1)]
-        print "{} surplus at {}".format(item, self.name)
-        print "old price {}, quantity {}".format(self.prices[item], self.goods[item])
         quantity = randint(config.economy['surplusThreshold'] * 3, config.economy['surplusThreshold'])
         self.goods[item] = quantity
         self.prices[item] = self.calculateBuySellPrice(item)
-        print "new price {}, quantity {}".format(self.prices[item], self.goods[item])
         return item
 
     def hireCrewMember(self):

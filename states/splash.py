@@ -59,5 +59,4 @@ class SplashState(GameState):
     def quit():
         mixer.music.stop()
         mixer.quit()
-        print "Quitting"
         sys.exit()
