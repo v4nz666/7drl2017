@@ -91,6 +91,7 @@ class Ship(Entity):
             self.stats['sailDamage'] = 100
         self.maxSails = int(config.maxSails - (self.stats['sailDamage']/100.0 * config.maxSails))
 
+
     @staticmethod
     def getBuyPrice(stats):
         return int(config.economy['buyMul'] * Ship._getValue(stats))
@@ -203,7 +204,7 @@ class Ship(Entity):
         if self.reloading:
             return False
         maxDist = max(captain.skills['gun'], config.captains['minRange'])
-        if util.dist(self.mapX, self.mapY, x, y) > maxDist:
+        if captain.ship.isPlayer and util.dist(self.mapX, self.mapY, x, y) > maxDist:
             return False
 
         bearing = util.bearing(self.mapX, self.mapY, x, y)
