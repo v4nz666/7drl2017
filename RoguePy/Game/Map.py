@@ -230,7 +230,7 @@ mountain = {
 # TODO: This is game-specific.
 CellType.All = {
     'water': CellType('~', Colors.blue, Colors.dark_blue, water),
-    'grass': CellType(',', Colors.darker_green, libtcod.Color(0, 96, 0), grass),
+    'grass': CellType('+', Colors.darker_green, libtcod.Color(0, 96, 0), grass),
     'tree': CellType('&', Colors.darkest_green, libtcod.Color(0, 96, 0), tree),
     'mountain': CellType('^', Colors.darker_grey, libtcod.Color(0, 96, 0), mountain),
 }
