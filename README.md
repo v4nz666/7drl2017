@@ -30,6 +30,8 @@ Destroy Pirate ships to earn money from the city they were attacking.
 
 ### Gameplay tips
 
+For a more complete writeup, see the wiki, at https://github.com/v4nz666/7drl2017/wiki
+
 You start your journey by selecting which of the land's major cities to sail out of. You start with a respectable amount of gold, and your first task should be to buy a ship.
 
 Visit the Shipyard ("Y" from the main city screen, if it's not already selected) and use the arrow keys to select a ship that fits your needs.
