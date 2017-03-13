@@ -45,7 +45,11 @@ MAC=False
 MINGW=False
 MSVC=False
 
-path=os.path.dirname(os.path.abspath(__file__))
+if bool(getattr(sys, 'frozen', None)):
+  path=os.path.dirname(sys.executable)
+else:
+  path=os.path.dirname(os.path.abspath(__file__))
+
 if sys.platform.find('linux') != -1:
     _lib = ctypes.cdll[path + '/libtcod.so']
     LINUX=True

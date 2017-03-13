@@ -11,7 +11,12 @@ class UI:
   _path = ''
   
   def __init__(self):
-    self._rootPath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  
+    if bool(getattr(sys, 'frozen', None)):
+      self._rootPath = os.path.dirname(sys.executable)
+    else:
+      self._rootPath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  
     self._font = self._rootPath + b'/libtcod/dundalk12x12_gs_tc.png'#lucida10x10_gs_tc.png'
     self._renderer = libtcod.RENDERER_SDL
     

@@ -1,7 +1,14 @@
-import pygame.mixer as mixer
-import os
 
-path = os.path.dirname(os.path.abspath(__file__))
+import pygame
+from pygame import mixer as mixer
+import os
+import sys
+
+# When in py2exe, manually set the path
+if bool(getattr(sys, 'frozen', None)):
+  path = os.path.dirname(sys.executable) + "/sounds"
+else:
+  path = os.path.dirname(os.path.abspath(__file__))
 
 mixer.pre_init(44100, -16, 2, 4096) #frequency, size, channels, buffersize
 mixer.init()
